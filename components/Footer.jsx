@@ -1,7 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { useState } from 'react';
-import { FaInstagram, FaFacebook } from 'react-icons/fa';
+import { FaInstagram, FaWhatsapp, FaEnvelope } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
 
 function OrangeBlossomMark({ className = "w-4 h-4" }) {
@@ -96,13 +96,19 @@ export default function Footer() {
         <div className="md:col-span-3">
           <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4A574] font-semibold mb-5">Contact</p>
           <ul className="space-y-3 text-sm text-[#FBF6F0]/65">
-            <li>WhatsApp : +212 XX XX XX XX</li>
-            <li>contact@cosmetiques-amina.ma</li>
             <li>Casablanca, Maroc</li>
           </ul>
           <div className="flex items-center gap-4 mt-6">
-            <a href="#" className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center hover:border-[#D4A574] hover:text-[#D4A574] transition-colors"><FaInstagram className="w-4 h-4" /></a>
-            <a href="#" className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center hover:border-[#D4A574] hover:text-[#D4A574] transition-colors"><FaFacebook className="w-4 h-4" /></a>
+            {/* CORRECTED NUMBER HERE */}
+            <a href="https://wa.me/212723908603" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp" className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center hover:border-[#D4A574] hover:text-[#D4A574] transition-colors">
+              <FaWhatsapp className="w-4 h-4" />
+            </a>
+            <a href="mailto:aminaclothingbrand@gmail.com" aria-label="Email" className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center hover:border-[#D4A574] hover:text-[#D4A574] transition-colors">
+              <FaEnvelope className="w-4 h-4" />
+            </a>
+            <a href="https://www.instagram.com/aminaclothingbrand/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-9 h-9 rounded-full border border-white/15 flex items-center justify-center hover:border-[#D4A574] hover:text-[#D4A574] transition-colors">
+              <FaInstagram className="w-4 h-4" />
+            </a>
           </div>
         </div>
       </div>
