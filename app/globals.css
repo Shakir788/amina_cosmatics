@@ -1,0 +1,59 @@
+@import "tailwindcss";
+
+@theme {
+  /* Colors */
+  --color-cosmo-dark: #1F1F24;
+  --color-cosmo-light: #FFF9F6;
+  --color-cosmo-secondary: #FFF1EA;
+  --color-cosmo-primary: #D98A8A;
+  --color-cosmo-accent: #C8A96B;
+  --color-cosmo-textgray: #6E6E73;
+  --color-cosmo-glass: rgba(255, 255, 255, 0.15);
+  --color-cosmo-glassborder: rgba(255, 255, 255, 0.35);
+
+  /* Typography */
+  --font-sans: var(--font-inter), sans-serif;
+  --font-mono: var(--font-geist-mono), monospace;
+
+  /* Premium Effects */
+  --shadow-glass: 0 8px 32px rgba(0, 0, 0, 0.08);
+  --background-image-luxury-glow: radial-gradient(circle, rgba(217,138,138,0.15) 0%, transparent 70%);
+}
+
+/* Base Styles */
+body {
+  background-color: var(--color-cosmo-light);
+  color: var(--color-cosmo-dark);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism System */
+.glass-panel {
+  background-color: var(--color-cosmo-glass);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid var(--color-cosmo-glassborder);
+  box-shadow: var(--shadow-glass);
+  border-radius: 24px;
+}
+
+/* 9:16 Cinematic Video Container */
+.cinematic-reel {
+  aspect-ratio: 9 / 16;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 24px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-cosmo-secondary);
+  border: 1px solid var(--color-cosmo-glassborder);
+}
+
+/* Smooth Transitions for Interactive Elements */
+button, a {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}

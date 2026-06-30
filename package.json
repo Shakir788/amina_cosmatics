@@ -1,0 +1,44 @@
+{
+  "name": "amina_cosmatics",
+  "version": "1.0.0",
+  "main": "next.config.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "keywords": [
+    "nextjs",
+    "tailwind",
+    "cosmetics",
+    "marketplace",
+    "morocco"
+  ],
+  "author": "Mohammad Shakir Salmani",
+  "license": "ISC",
+  "description": "Curated premium multi-brand cosmetic and beauty marketplace in Morocco.",
+  "dependencies": {
+    "@react-three/drei": "^10.7.7",
+    "@react-three/fiber": "^9.6.1",
+    "@sanity/image-url": "^2.1.1",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.41.0",
+    "lucide-react": "^1.22.0",
+    "next": "^16.2.9",
+    "next-sanity": "^13.1.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-icons": "^5.7.0",
+    "react-player": "^3.4.0",
+    "tailwind-merge": "^3.6.0",
+    "three": "^0.185.0",
+    "zustand": "^5.0.14"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.1",
+    "autoprefixer": "^10.5.1",
+    "postcss": "^8.5.15",
+    "tailwindcss": "^4.3.1"
+  }
+}
