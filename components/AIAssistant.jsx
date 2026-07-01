@@ -264,7 +264,7 @@ export default function AIAssistant() {
                     <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-green-400 border-2 border-[#1C1410] rounded-full" />
                   </div>
                   <div>
-                    <h3 className="text-[#FBF6F0] text-sm font-semibold uppercase tracking-[0.12em]">Amina AI</h3>
+                    <h3 className="text-[#FBF6F0] text-sm font-semibold uppercase tracking-[0.12em]">Amina</h3>
                     <p className="text-[#FBF6F0]/55 text-[10px] uppercase tracking-widest flex items-center gap-1">
                       <Sparkles className="w-2.5 h-2.5 text-[#D4A574]" />
                       Experte Beauté & Dermatologue
