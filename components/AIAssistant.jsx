@@ -407,7 +407,7 @@ export default function AIAssistant() {
         {/* Toggle Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          title="Parler à Amina AI"
+          title="Parler à Amina"
           className={`relative group flex items-center justify-center w-14 h-14 rounded-full shadow-[0_10px_30px_rgba(28,20,16,0.3)] transition-all hover:scale-105 active:scale-95 ${
             isOpen ? 'bg-[#1C1410]' : 'bg-[#B5704A]'
           }`}
