@@ -81,10 +81,9 @@ export default async function ProductPage({ params }) {
 
         <div className="flex flex-col md:flex-row gap-16">
 
-          {/* Left Side: Media Container */}
+          {/* Left Side: Media Container (Cinematic 9:16 Vertical) */}
           <div className="w-full md:w-1/2">
-            <div className="sticky top-24 aspect-[4/5] w-full rounded-[28px] overflow-hidden bg-[#F0E4D4] shadow-[0_20px_60px_-15px_rgba(28,20,16,0.25)] ring-1 ring-[#E8D9C5] relative">
-              <div className="relative w-full h-full">
+            <div className="sticky top-24 aspect-[9/16] w-full max-h-[85vh] rounded-[28px] overflow-hidden bg-[#F0E4D4] shadow-[0_20px_60px_-15px_rgba(28,20,16,0.25)] ring-1 ring-[#E8D9C5] relative">
                 {product.videoUrl ? (
                   <video
                     src={product.videoUrl}
@@ -96,7 +95,7 @@ export default async function ProductPage({ params }) {
                     src={urlFor(product.image).url()}
                     alt={product.name || "Product Image"}
                     fill
-                    className="object-cover"
+                    className="object-cover object-center"
                     priority
                     sizes="(max-width: 768px) 100vw, 50vw"
                   />
@@ -118,7 +117,6 @@ export default async function ProductPage({ params }) {
                 </div>
               )}
             </div>
-          </div>
 
           {/* Right Side: Details */}
           <div className="w-full md:w-1/2 flex flex-col justify-center">

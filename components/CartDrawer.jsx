@@ -1,7 +1,8 @@
 'use client';
 import { useCartStore } from '../store/useCartStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+// useRouter hata diya kyunki ab hum direct WhatsApp pe bhejenge
+import { FaWhatsapp } from 'react-icons/fa'; // WhatsApp icon ke liye
 
 function OrangeBlossomMark({ className = "w-3.5 h-3.5" }) {
   return (
@@ -25,8 +26,7 @@ function OrangeBlossomMark({ className = "w-3.5 h-3.5" }) {
 }
 
 export default function CartDrawer() {
-  const { isOpen, closeCart, cart, removeFromCart, updateQuantity } = useCartStore();
-  const router = useRouter();
+  const { isOpen, closeCart, cart, updateQuantity } = useCartStore();
 
   const totalPrice = cart.reduce((acc, item) => {
     const priceString = String(item.price);
@@ -34,9 +34,28 @@ export default function CartDrawer() {
     return acc + (numericPrice * (item.quantity || 1));
   }, 0);
 
+  // --- NAYA WHATSAPP CHECKOUT LOGIC ---
   const handleCheckout = () => {
+    if (cart.length === 0) return;
+
+    // 1. Ek sundar sa message format banao
+    let message = "Bonjour Cosmétiques Amina ! 🌸\nJe souhaite commander :\n\n";
+    
+    cart.forEach((item) => {
+      message += `▪ ${item.quantity}x ${item.name} (${item.price})\n`;
+    });
+
+    message += `\n*Total estimé : ${totalPrice} MAD*\n\nMerci !`;
+
+    // 2. Message ko URL ke liye encode karo
+    const encodedMessage = encodeURIComponent(message);
+    
+    // 3. Tere number ke sath WhatsApp link banao
+    const whatsappUrl = `https://wa.me/212723908603?text=${encodedMessage}`;
+
+    // 4. Naye tab mein WhatsApp open karo aur drawer band kardo
+    window.open(whatsappUrl, '_blank');
     closeCart();
-    router.push('/checkout');
   };
 
   return (
@@ -139,12 +158,13 @@ export default function CartDrawer() {
                     {totalPrice} <span className="text-base text-[#B5704A]">MAD</span>
                   </span>
                 </div>
+                {/* Button updated for WhatsApp */}
                 <button
                   onClick={handleCheckout}
-                  className="group w-full bg-[#1C1410] text-[#FBF6F0] py-4.5 rounded-full font-semibold uppercase tracking-[0.2em] text-sm hover:bg-[#B5704A] transition-colors duration-300 active:scale-[0.97] shadow-lg flex items-center justify-center gap-3"
+                  className="group w-full bg-[#1C1410] text-[#FBF6F0] py-4.5 rounded-full font-semibold uppercase tracking-[0.15em] text-[11px] hover:bg-[#B5704A] transition-colors duration-300 active:scale-[0.97] shadow-lg flex items-center justify-center gap-3"
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#D4A574] group-hover:bg-[#FBF6F0] transition-colors" />
-                  Passer à la commande
+                  <FaWhatsapp className="w-4 h-4" />
+                  Commander via WhatsApp
                 </button>
               </div>
             )}

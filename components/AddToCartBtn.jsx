@@ -4,7 +4,11 @@ import { useCartStore } from '../store/useCartStore';
 
 export default function AddToCartBtn({ product }) {
   const [isAdding, setIsAdding] = useState(false);
+  
+  // Zustand se addToCart aur openCart dono nikal liye
   const addToCart = useCartStore((state) => state.addToCart);
+  const openCart = useCartStore((state) => state.openCart); // Make sure tere store mein openCart function ho
+
   const isOutOfStock = product.inStock === false;
 
   const handleAddToCart = async () => {
@@ -17,10 +21,16 @@ export default function AddToCartBtn({ product }) {
       id: product._id,
       name: product.name,
       price: product.price,
-      image: product.image // Cart mein image dikhane ke liye zaroori hai
+      image: product.image 
     });
 
     setIsAdding(false);
+    
+    // --- THE CLOSER MOVE ---
+    // Item add hote hi drawer open kardo taaki customer direct checkout dekhe
+    if (openCart) {
+      openCart();
+    }
   };
 
   if (isOutOfStock) {
