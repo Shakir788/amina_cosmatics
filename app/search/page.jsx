@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { client, urlFor } from '../../sanity/client';
 import Link from 'next/link';
@@ -29,7 +29,8 @@ function SkeletonCard() {
   );
 }
 
-export default function SearchPage() {
+// Everything that touches useSearchParams lives here, inside the Suspense boundary.
+function SearchContent() {
   const searchParams = useSearchParams();
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState([]);
@@ -129,5 +130,30 @@ export default function SearchPage() {
         )}
       </div>
     </main>
+  );
+}
+
+function SearchFallback() {
+  return (
+    <main className="min-h-screen bg-[#FBF6F0] py-28 px-6 md:px-12">
+      <div className="max-w-[1200px] mx-auto">
+        <div className="text-center mb-14">
+          <p className="text-[#B5704A] uppercase tracking-[0.35em] text-[11px] font-semibold mb-3">
+            Résultats de recherche
+          </p>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+          {Array(4).fill(0).map((_, i) => <SkeletonCard key={i} />)}
+        </div>
+      </div>
+    </main>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense fallback={<SearchFallback />}>
+      <SearchContent />
+    </Suspense>
   );
 }
