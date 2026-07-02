@@ -386,7 +386,7 @@ export default function SkinQuiz({ isOpen, onClose }) {
             <X className="w-8 h-8" />
           </button>
 
-          <div className="w-full max-w-2xl bg-white border border-[#E8D9C5] rounded-[40px] shadow-[0_30px_60px_-15px_rgba(28,20,16,0.1)] overflow-hidden relative min-h-[560px] flex flex-col">
+          <div className="w-full max-w-2xl bg-white border border-[#E8D9C5] rounded-[40px] shadow-[0_30px_60px_-15px_rgba(28,20,16,0.1)] relative min-h-[500px] max-h-[90vh] overflow-y-auto overflow-x-hidden flex flex-col">
 
             {/* Top Progress Bar */}
             {step < totalSteps && (
