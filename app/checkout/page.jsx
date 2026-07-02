@@ -76,7 +76,7 @@ export default function CheckoutPage() {
       console.error('Could not save order to session storage', err);
     }
 
-    window.open(`https://wa.me/212XXXXXXXXXX?text=${message}`, '_blank');
+    window.open(`https://wa.me/212723908603?text=${message}`, '_blank');
     if (typeof clearCart === 'function') clearCart();
     router.push('/order-confirmation');
   };
