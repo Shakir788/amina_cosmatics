@@ -1,6 +1,7 @@
 import HeroSection from '../components/HeroSection';
 import ProductGrid from '../components/ProductGrid';
 import ReelsSection from '../components/ReelsSection';
+import SkinQuizBanner from '../components/SkinQuizBanner'; // Naya Banner Import Kiya
 import { client } from '../sanity/client'; 
 
 // Cache ko 0 kiya hai taaki jab bhi tu naya product add kare, wo turant website pe dikhe
@@ -67,7 +68,7 @@ export default async function Home() {
       <div className="px-6 md:px-12 max-w-[1400px] mx-auto w-full">
 
         {/* Section: Nouveautés */}
-        <section className="mt-8 mb-20">
+        <section className="mt-8 mb-12">
           <div className="text-center mb-14">
             <p className="text-[#B5704A] uppercase tracking-[0.35em] text-[11px] font-semibold mb-3">
               Sélection
@@ -84,8 +85,13 @@ export default async function Home() {
           <ProductGrid products={products} />
         </section>
 
+        {/* NAYA SECTION: Skin Quiz Banner */}
+        <section>
+          <SkinQuizBanner />
+        </section>
+
         {/* Section: Reels */}
-        <section className="mb-24">
+        <section className="mb-24 mt-12">
           <div className="text-center mb-14">
             <p className="text-[#B5704A] uppercase tracking-[0.35em] text-[11px] font-semibold mb-3">
               En direct
