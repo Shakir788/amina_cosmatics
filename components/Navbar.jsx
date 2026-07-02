@@ -27,7 +27,8 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
-  const toggleCart = useCartStore((state) => state.toggleCart);
+  // Yahan toggleCart ki jagah openCart lagaya taaki 100% reliably khule
+  const openCart = useCartStore((state) => state.openCart);
   const cart = useCartStore((state) => state.cart);
   const router = useRouter();
 
@@ -74,7 +75,7 @@ export default function Navbar() {
             <button
               onClick={() => setMenuOpen(true)}
               aria-label="Ouvrir le menu"
-              className="md:hidden text-[#1C1410] hover:text-[#B5704A] transition-colors"
+              className="md:hidden text-[#1C1410] p-1 -ml-1 hover:text-[#B5704A] transition-colors"
             >
               <Menu className="w-5 h-5" />
             </button>
@@ -103,19 +104,24 @@ export default function Navbar() {
           </div>
 
           {/* Right — Icons */}
-          <div className="flex-1 flex justify-end items-center gap-4">
+          <div className="flex-1 flex justify-end items-center gap-3">
             <button
               onClick={() => setSearchOpen(true)}
               aria-label="Rechercher"
-              className="text-[#1C1410]/80 hover:text-[#B5704A] transition-colors"
+              className="p-1.5 text-[#1C1410]/80 hover:text-[#B5704A] transition-colors"
             >
               <Search className="w-[18px] h-[18px]" />
             </button>
 
-            <button onClick={toggleCart} className="relative cursor-pointer group outline-none">
+            {/* Clickable Area Badha Diya (p-1.5) aur onClick mein openCart laga diya */}
+            <button 
+              onClick={openCart} 
+              aria-label="Ouvrir le panier"
+              className="relative p-1.5 cursor-pointer group outline-none"
+            >
               <ShoppingBag className="w-[18px] h-[18px] text-[#1C1410]/80 group-hover:text-[#B5704A] transition-colors" />
               {cart.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-[#B5704A] text-[#FBF6F0] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-[#B5704A] text-[#FBF6F0] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {cart.length}
                 </span>
               )}

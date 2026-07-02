@@ -284,7 +284,7 @@ export default function AIAssistant() {
 
                   {/* WhatsApp handoff */}
                   <a
-                    href="https://wa.me/212XXXXXXXXXX?text=Bonjour, j'ai besoin d'aide avec ma consultation beauté."
+                    href="https://wa.me/212723908603?text=Bonjour, j'ai besoin d'aide avec ma consultation beauté."
                     target="_blank"
                     rel="noopener noreferrer"
                     title="Parler à un humain"

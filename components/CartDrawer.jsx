@@ -1,9 +1,10 @@
 'use client';
 import { useCartStore } from '../store/useCartStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaWhatsapp } from 'react-icons/fa';
+import { ShoppingBag } from 'lucide-react'; // WhatsApp icon hatakar premium shopping bag icon lagaya
 import Image from 'next/image';
 import { urlFor } from '../sanity/client';
+import { useRouter } from 'next/navigation'; // Router import kiya
 
 function OrangeBlossomMark({ className = "w-3.5 h-3.5" }) {
   return (
@@ -28,6 +29,7 @@ function OrangeBlossomMark({ className = "w-3.5 h-3.5" }) {
 
 export default function CartDrawer() {
   const { isOpen, closeCart, cart, updateQuantity } = useCartStore();
+  const router = useRouter(); // Router initialize kiya
 
   const totalPrice = cart.reduce((acc, item) => {
     const priceString = String(item.price);
@@ -35,23 +37,11 @@ export default function CartDrawer() {
     return acc + (numericPrice * (item.quantity || 1));
   }, 0);
 
-  // --- NAYA WHATSAPP CHECKOUT LOGIC ---
+  // --- NAYA CHECKOUT LOGIC (Redirect to Checkout Page) ---
   const handleCheckout = () => {
     if (cart.length === 0) return;
-
-    let message = "Bonjour Cosmétiques Amina ! 🌸\nJe souhaite commander :\n\n";
-    
-    cart.forEach((item) => {
-      message += `▪ ${item.quantity}x ${item.name} (${item.price})\n`;
-    });
-
-    message += `\n*Total estimé : ${totalPrice} MAD*\n\nMerci !`;
-
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/212723908603?text=${encodedMessage}`;
-
-    window.open(whatsappUrl, '_blank');
-    closeCart();
+    closeCart(); // Pehle drawer band karo
+    router.push('/checkout'); // Phir checkout page pe bhej do
   };
 
   return (
@@ -169,12 +159,13 @@ export default function CartDrawer() {
                     {totalPrice} <span className="text-base text-[#B5704A]">MAD</span>
                   </span>
                 </div>
+                {/* Button updated for standard checkout flow */}
                 <button
                   onClick={handleCheckout}
                   className="group w-full bg-[#1C1410] text-[#FBF6F0] py-4.5 rounded-full font-semibold uppercase tracking-[0.15em] text-[11px] hover:bg-[#B5704A] transition-colors duration-300 active:scale-[0.97] shadow-lg flex items-center justify-center gap-3"
                 >
-                  <FaWhatsapp className="w-4 h-4" />
-                  Commander via WhatsApp
+                  <ShoppingBag className="w-4 h-4" />
+                  Valider la commande
                 </button>
               </div>
             )}
