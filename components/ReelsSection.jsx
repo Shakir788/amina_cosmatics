@@ -4,20 +4,20 @@ import { motion } from 'framer-motion';
 import { Play, ShoppingBag, Volume2, VolumeX } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
 
-const REELS_DATA = [
-  { id: 'r1', video: "https://www.pexels.com/download/video/7614789/", product: { _id: "prod_1", name: "Sérum Éclat Vitamine C", price: 350 } },
-  { id: 'r2', video: "https://www.pexels.com/download/video/7428167/", product: { _id: "prod_2", name: "Crème Hydratante Intense", price: 280 } },
-  { id: 'r3', video: "https://www.pexels.com/download/video/7316967/", product: { _id: "prod_3", name: "Huile Scintillante Corps", price: 420 } },
-  { id: 'r4', video: "https://www.pexels.com/download/video/5937378/", product: { _id: "prod_4", name: "Masque Purifiant Argile", price: 210 } },
-  { id: 'r5', video: "https://www.pexels.com/download/video/7428171/", product: { _id: "prod_5", name: "Eau de Rose Bio", price: 150 } },
-  { id: 'r6', video: "https://www.pexels.com/download/video/7852689/", product: { _id: "prod_6", name: "Sérum Rétinol Nuit", price: 450 } },
-  { id: 'r7', video: "https://www.pexels.com/download/video/8479189/", product: { _id: "prod_7", name: "Baume à Lèvres Teinté", price: 90 } },
-  { id: 'r8', video: "https://www.pexels.com/download/video/8479090/", product: { _id: "prod_8", name: "Gommage Doux Visage", price: 180 } },
-];
-
-export default function ReelsSection() {
+// ✨ NAYA: Component ab directly "products" prop accept karega
+export default function ReelsSection({ products = [] }) {
   const addToCart = useCartStore((state) => state.addToCart);
   const openCart = useCartStore((state) => state.openCart);
+
+  // ✨ SMART FILTER: Sirf wo products nikaalo jisme actually video link hai
+  const videoProducts = products.filter(
+    (p) => p.uploadedVideoUrl || p.videoUrl
+  );
+
+  // Agar database me ek bhi video wala product nahi hai, toh ye section hide ho jayega
+  if (videoProducts.length === 0) {
+    return null; 
+  }
 
   return (
     <section className="py-24">
@@ -26,13 +26,21 @@ export default function ReelsSection() {
       </h2>
       
       {/* Horizontal scrollable container */}
-      <div className="flex gap-6 overflow-x-auto pb-12 pt-4 px-6 md:px-0 scrollbar-hide snap-x snap-mandatory items-center">
-        {REELS_DATA.map((reel) => (
+      <div 
+        className="flex gap-6 overflow-x-auto pb-12 pt-4 px-6 md:px-0 snap-x snap-mandatory items-center scroll-smooth"
+        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+      >
+        {videoProducts.map((product) => (
           <ReelCard 
-            key={reel.id} 
-            reel={reel} 
+            key={product._id} 
+            product={product} 
             onAdd={() => {
-              addToCart({ id: reel.product._id, name: reel.product.name, price: `${reel.product.price} MAD`, quantity: 1 });
+              addToCart({ 
+                id: product._id, 
+                name: product.name, 
+                price: `${product.price} MAD`, 
+                quantity: 1 
+              });
               openCart();
             }} 
           />
@@ -42,16 +50,19 @@ export default function ReelsSection() {
   );
 }
 
-function ReelCard({ reel, onAdd }) {
+function ReelCard({ product, onAdd }) {
   const videoRef = useRef(null);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
 
+  // ✨ Video source ko real product link se connect kiya
+  const videoSrc = product.uploadedVideoUrl || product.videoUrl;
+
   const togglePlay = () => {
     if (isPlaying) {
-      videoRef.current.pause();
+      videoRef.current?.pause();
     } else {
-      videoRef.current.play();
+      videoRef.current?.play();
     }
     setIsPlaying(!isPlaying);
   };
@@ -64,18 +75,17 @@ function ReelCard({ reel, onAdd }) {
   return (
     <motion.div 
       whileHover={{ scale: 1.02 }}
-      // THE FIX: Strict Width & Height for 9:16 Portrait Format
-      className="relative w-[280px] sm:w-[320px] h-[500px] sm:h-[570px] shrink-0 snap-center rounded-[32px] overflow-hidden shadow-2xl border border-[#E8D9C5]/50 bg-[#1C1410] cursor-pointer group"
+      // ✨ FIX: Exact 9:16 portrait format for cinematic Instagram reel layout
+      className="relative aspect-[9/16] h-[500px] sm:h-[570px] shrink-0 snap-center rounded-[32px] overflow-hidden shadow-2xl border border-[#E8D9C5]/50 bg-[#1C1410] cursor-pointer group"
       onClick={togglePlay}
     >
       <video 
         ref={videoRef}
-        src={reel.video}
+        src={videoSrc}
         autoPlay
         loop
         muted={isMuted}
         playsInline
-        // object-cover is crucial here. It forces landscape videos to fill the vertical frame properly.
         className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
       />
       
@@ -109,11 +119,12 @@ function ReelCard({ reel, onAdd }) {
             <p className="text-[10px] uppercase tracking-[0.2em] text-[#B5704A] font-bold mb-1">
               Acheter le look
             </p>
+            {/* ✨ NAYA: Real product name and price */}
             <h4 className="font-medium text-[#1C1410] text-sm truncate">
-              {reel.product.name}
+              {product.name}
             </h4>
             <p className="text-[#1C1410] font-semibold text-xs mt-0.5">
-              {reel.product.price} MAD
+              {product.price} MAD
             </p>
           </div>
           <button 
