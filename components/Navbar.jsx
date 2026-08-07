@@ -1,10 +1,11 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { ShoppingBag, Search, Menu, X, ArrowRight } from 'lucide-react';
+import { ShoppingBag, Search, Menu, X, ArrowRight, Heart } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../store/useCartStore';
+import { useWishlistStore } from '../store/useWishlistStore'; // Wishlist store import kiya
 
 function OrangeBlossomMark({ className = "w-3.5 h-3.5" }) {
   return (
@@ -29,14 +30,17 @@ const NAV_LINKS = [
 export default function Navbar() {
   const openCart = useCartStore((state) => state.openCart);
   const cart = useCartStore((state) => state.cart);
+  const wishlistCount = useWishlistStore((state) => state.wishlist.length); // Wishlist ka count fetch kiya
   const router = useRouter();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [mounted, setMounted] = useState(false); // Hydration error bachane ke liye
   const searchInputRef = useRef(null);
 
   useEffect(() => {
+    setMounted(true); // Component mount hote hi true ho jayega
     setMenuOpen(false);
     setSearchOpen(false);
   }, []);
@@ -109,13 +113,27 @@ export default function Navbar() {
               <Search className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px]" />
             </button>
 
+            {/* NAYA WISHLIST BUTTON */}
+            <Link 
+              href="/wishlist" 
+              className="relative p-1.5 text-[#1C1410]/80 hover:text-[#B5704A] transition-colors group"
+            >
+              <Heart className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] group-hover:text-[#B5704A] transition-colors" />
+              
+              {mounted && wishlistCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#B5704A] text-[#FBF6F0] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                  {wishlistCount}
+                </span>
+              )}
+            </Link>
+
             <button
               onClick={openCart}
               aria-label="Ouvrir le panier"
               className="relative p-1.5 cursor-pointer group outline-none"
             >
               <ShoppingBag className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-[#1C1410]/80 group-hover:text-[#B5704A] transition-colors" />
-              {cart.length > 0 && (
+              {mounted && cart.length > 0 && ( // Hydration issue rokne ke liye 'mounted' yahan bhi daala hai
                 <span className="absolute -top-1 -right-1 bg-[#B5704A] text-[#FBF6F0] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {cart.length}
                 </span>
