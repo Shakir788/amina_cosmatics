@@ -20,29 +20,24 @@ function OrangeBlossomMark({ className = "w-3.5 h-3.5" }) {
   );
 }
 
-// 3D tilt hook — tracks mouse position relative to card
+// 3D tilt hook — desktop only, disabled on touch devices via CSS media query check
 function use3DTilt() {
   const ref = useRef(null);
-
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  // Spring smoothing — feels natural, not snappy
   const xSpring = useSpring(x, { stiffness: 150, damping: 20 });
   const ySpring = useSpring(y, { stiffness: 150, damping: 20 });
 
-  // Convert mouse position to rotation degrees (max ±12deg)
   const rotateX = useTransform(ySpring, [-0.5, 0.5], [10, -10]);
   const rotateY = useTransform(xSpring, [-0.5, 0.5], [-10, 10]);
 
-  // Subtle scale + glow on hover
   const scale = useSpring(1, { stiffness: 200, damping: 20 });
   const glowOpacity = useSpring(0, { stiffness: 200, damping: 20 });
 
   const handleMouseMove = (e) => {
     const rect = ref.current?.getBoundingClientRect();
     if (!rect) return;
-    // Normalize to -0.5 → 0.5
     x.set((e.clientX - rect.left) / rect.width - 0.5);
     y.set((e.clientY - rect.top) / rect.height - 0.5);
   };
@@ -66,7 +61,6 @@ export default function ProductCard({ product, lang = 'fr' }) {
   const addToCart = useCartStore((state) => state.addToCart);
   const { ref, rotateX, rotateY, scale, glowOpacity, handleMouseMove, handleMouseEnter, handleMouseLeave } = use3DTilt();
 
-  // VIP Logic: Stock and Exact Discount Calculation
   const isOutOfStock = product.inStock === false;
   const currentPrice = Number(product.price);
   const oldPrice = product.originalPrice ? Number(product.originalPrice) : null;
@@ -75,12 +69,10 @@ export default function ProductCard({ product, lang = 'fr' }) {
     ? Math.round(((oldPrice - currentPrice) / oldPrice) * 100)
     : 0;
 
-  // Multi-language Name Support
   const name = product[`name_${lang}`] || product.name || "Produit Amina";
   const category = product.category || "Collection";
 
   return (
-    // Perspective wrapper — essential for 3D effect
     <div style={{ perspective: '1000px' }} className="w-full">
       <motion.div
         ref={ref}
@@ -93,49 +85,48 @@ export default function ProductCard({ product, lang = 'fr' }) {
           scale,
           transformStyle: 'preserve-3d',
         }}
-        className={`bg-white/80 backdrop-blur-sm rounded-[28px] p-4 flex flex-col group relative border border-[#E8D9C5] shadow-[0_8px_30px_-12px_rgba(28,20,16,0.1)] transition-shadow duration-500 ${isOutOfStock ? 'opacity-80 grayscale-[25%]' : ''}`}
+        className={`bg-white/80 backdrop-blur-sm rounded-[18px] sm:rounded-[28px] p-2.5 sm:p-4 flex flex-col group relative border border-[#E8D9C5] shadow-[0_4px_16px_-8px_rgba(28,20,16,0.1)] sm:shadow-[0_8px_30px_-12px_rgba(28,20,16,0.1)] transition-shadow duration-500 ${isOutOfStock ? 'opacity-80 grayscale-[25%]' : ''}`}
       >
-        {/* Dynamic gold glow — follows mouse, appears on hover */}
         <motion.div
           style={{
             opacity: glowOpacity,
             background: 'radial-gradient(circle at 50% 50%, rgba(212,165,116,0.12) 0%, transparent 70%)',
           }}
-          className="pointer-events-none absolute inset-0 rounded-[28px] z-0"
+          className="pointer-events-none absolute inset-0 rounded-[18px] sm:rounded-[28px] z-0"
         />
 
-        {/* Wishlist Button (Top Left) */}
-        <div className="absolute top-6 left-6 z-40">
+        {/* Wishlist Button */}
+        <div className="absolute top-3.5 left-3.5 sm:top-6 sm:left-6 z-40 scale-[0.8] sm:scale-100 origin-top-left">
           <WishlistBtn product={product} />
         </div>
 
-        {/* Out of Stock Overlay */}
+        {/* Out of Stock */}
         {isOutOfStock && (
-          <div className="absolute inset-0 z-30 bg-[#FBF6F0]/60 backdrop-blur-[2px] flex items-center justify-center rounded-[28px]">
-            <span className="bg-[#1C1410] text-[#D4A574] text-[10px] uppercase tracking-[0.25em] px-5 py-2.5 rounded-full font-semibold shadow-xl">
+          <div className="absolute inset-0 z-30 bg-[#FBF6F0]/60 backdrop-blur-[2px] flex items-center justify-center rounded-[18px] sm:rounded-[28px]">
+            <span className="bg-[#1C1410] text-[#D4A574] text-[9px] sm:text-[10px] uppercase tracking-[0.2em] sm:tracking-[0.25em] px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full font-semibold shadow-xl">
               Épuisé
             </span>
           </div>
         )}
 
-        {/* Discount Badge (Top Right) */}
+        {/* Discount Badge */}
         {hasDiscount && (
-          <div className="absolute top-8 right-8 z-20 bg-[#B5704A] text-[#FBF6F0] text-[10px] font-bold px-3.5 py-1.5 rounded-full shadow-lg flex items-center gap-1.5">
-            <OrangeBlossomMark className="w-2.5 h-2.5 text-[#D4A574]" />
+          <div className="absolute top-5 right-5 sm:top-8 sm:right-8 z-20 bg-[#B5704A] text-[#FBF6F0] text-[9px] sm:text-[10px] font-bold px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full shadow-lg flex items-center gap-1 sm:gap-1.5">
+            <OrangeBlossomMark className="w-2 h-2 sm:w-2.5 sm:h-2.5 text-[#D4A574]" />
             -{discountPercentage}%
           </div>
         )}
 
-        {/* Media Link */}
+        {/* Media */}
         <Link href={`/product/${product.slug?.current}`} className="w-full relative z-10">
-          <div className="aspect-[9/16] w-full bg-[#F0E4D4] rounded-[20px] mb-5 overflow-hidden relative shadow-inner ring-1 ring-[#E8D9C5]">
+          <div className="aspect-[9/16] w-full bg-[#F0E4D4] rounded-[14px] sm:rounded-[20px] mb-3 sm:mb-5 overflow-hidden relative shadow-inner ring-1 ring-[#E8D9C5]">
             {product.image && (
               <Image
                 src={urlFor(product.image).url()}
                 alt={name}
                 fill
                 className="object-cover transition-transform duration-700 group-hover:scale-105 z-10"
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+                sizes="(max-width: 640px) 45vw, (max-width: 1024px) 33vw, 25vw"
               />
             )}
 
@@ -151,29 +142,29 @@ export default function ProductCard({ product, lang = 'fr' }) {
           </div>
         </Link>
 
-        {/* Details Section */}
-        <div className="px-2 pb-2 flex justify-between items-end mt-auto relative z-10">
+        {/* Details */}
+        <div className="px-1 sm:px-2 pb-0.5 sm:pb-2 flex justify-between items-end mt-auto relative z-10">
           <div className="min-w-0">
-            <span className="text-[10px] uppercase font-semibold text-[#B5704A] tracking-[0.2em]">
+            <span className="text-[8.5px] sm:text-[10px] uppercase font-semibold text-[#B5704A] tracking-[0.15em] sm:tracking-[0.2em]">
               {category}
             </span>
             <Link href={`/product/${product.slug?.current}`}>
               <h3
-                className="text-[#1C1410] mt-1.5 group-hover:text-[#B5704A] transition-colors line-clamp-1 text-xl"
+                className="text-[#1C1410] mt-0.5 sm:mt-1.5 group-hover:text-[#B5704A] transition-colors line-clamp-1 text-sm sm:text-xl"
                 style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
               >
                 {name}
               </h3>
             </Link>
 
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-1.5 sm:gap-2 mt-1 sm:mt-2">
               {hasDiscount && (
-                <span className="text-[#7A4B3A]/50 text-[11px] line-through font-medium">
+                <span className="text-[#7A4B3A]/50 text-[9px] sm:text-[11px] line-through font-medium">
                   {oldPrice}
                 </span>
               )}
-              <p className="text-[#1C1410] font-semibold tracking-tight">
-                {currentPrice} <span className="text-[10px] text-[#7A4B3A]/70 uppercase tracking-wider">MAD</span>
+              <p className="text-[#1C1410] font-semibold tracking-tight text-xs sm:text-base">
+                {currentPrice} <span className="text-[8.5px] sm:text-[10px] text-[#7A4B3A]/70 uppercase tracking-wider">MAD</span>
               </p>
             </div>
           </div>
@@ -186,7 +177,7 @@ export default function ProductCard({ product, lang = 'fr' }) {
                 addToCart({ id: product._id, name, price: `${currentPrice} MAD` });
               }}
               aria-label="Ajouter au panier"
-              className="w-11 h-11 shrink-0 rounded-full bg-[#1C1410] text-[#FBF6F0] flex items-center justify-center hover:bg-[#B5704A] transition-all duration-300 active:scale-90 shadow-md text-lg font-light"
+              className="w-8 h-8 sm:w-11 sm:h-11 shrink-0 rounded-full bg-[#1C1410] text-[#FBF6F0] flex items-center justify-center hover:bg-[#B5704A] transition-all duration-300 active:scale-90 shadow-md text-base sm:text-lg font-light"
             >
               +
             </button>

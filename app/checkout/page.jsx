@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useCartStore } from '../../store/useCartStore';
 import Image from 'next/image';
@@ -44,6 +44,14 @@ export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState('whatsapp');
   const [showQR, setShowQR] = useState(false);
 
+  // Payment proof state
+  const [screenshot, setScreenshot] = useState(null);
+  const [screenshotPreview, setScreenshotPreview] = useState(null);
+  const [transactionId, setTransactionId] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+  const fileInputRef = useRef(null);
+
   useEffect(() => setIsMounted(true), []);
 
   const subtotal = cart.reduce((acc, item) => {
@@ -58,13 +66,25 @@ export default function CheckoutPage() {
     e.preventDefault();
 
     if (paymentMethod === 'online') {
-      // Show QR code modal for Cash Plus payment
       setShowQR(true);
       return;
     }
 
-    const items = cart.map(i => `• ${i.name} (x${i.quantity})`).join('%0A');
-    const message = `*Nouvelle Commande*%0A%0A*Client:* ${formData.name}%0A*Tél:* ${formData.phone}%0A*Adresse:* ${formData.address}%0A%0A*Produits:*%0A${items}%0A%0A*Sous-total:* ${subtotal} MAD%0A*Livraison:* ${deliveryFee} MAD%0A*Total:* ${total} MAD`;
+    const messageLines = [
+      '*Nouvelle Commande*',
+      '',
+      `*Client:* ${formData.name}`,
+      `*Tél:* ${formData.phone}`,
+      `*Adresse:* ${formData.address}`,
+      '',
+      '*Produits:*',
+      ...cart.map(i => `• ${i.name} (x${i.quantity})`),
+      '',
+      `*Sous-total:* ${subtotal} MAD`,
+      `*Livraison:* ${deliveryFee} MAD`,
+      `*Total:* ${total} MAD`
+    ];
+    const message = messageLines.join('\n');
 
     try {
       sessionStorage.setItem('lastOrder', JSON.stringify({
@@ -76,26 +96,69 @@ export default function CheckoutPage() {
       console.error('Could not save order to session storage', err);
     }
 
-    window.open(`https://wa.me/212723908603?text=${message}`, '_blank');
+    window.open(`https://wa.me/212723908603?text=${encodeURIComponent(message)}`, '_blank');
     if (typeof clearCart === 'function') clearCart();
     router.push('/order-confirmation');
   };
 
-  const handleQRConfirm = () => {
-    // Customer scanned QR — save order and redirect
+  const handleScreenshotChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setScreenshot(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setScreenshotPreview(reader.result);
+    reader.readAsDataURL(file);
+    setSubmitError('');
+  };
+
+  const handleQRConfirm = async () => {
+    if (!screenshot) {
+      setSubmitError('Veuillez ajouter une capture d\'écran de votre paiement.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    setSubmitError('');
+
     try {
-      sessionStorage.setItem('lastOrder', JSON.stringify({
-        name: formData.name,
-        items: cart.map(i => ({ name: i.name, quantity: i.quantity })),
-        subtotal, deliveryFee: 0, total: subtotal,
-        paymentMethod: 'online',
-      }));
+      const fd = new FormData();
+      fd.append('customerName', formData.name);
+      fd.append('phone', formData.phone);
+      fd.append('address', formData.address);
+      fd.append('cartItems', JSON.stringify(cart.map(i => ({
+        name: i.name, quantity: i.quantity, price: parseInt(String(i.price).replace(/[^0-9]/g, '')) || 0,
+      }))));
+      fd.append('totalPrice', String(subtotal));
+      fd.append('transactionId', transactionId);
+      fd.append('screenshot', screenshot);
+
+      const res = await fetch('/api/orders', { method: 'POST', body: fd });
+      const data = await res.json();
+
+      if (!res.ok) throw new Error(data.error || 'Erreur');
+
+      try {
+        sessionStorage.setItem('lastOrder', JSON.stringify({
+          name: formData.name,
+          items: cart.map(i => ({ name: i.name, quantity: i.quantity })),
+          subtotal, deliveryFee: 0, total: subtotal,
+          paymentMethod: 'online',
+          orderNumber: data.orderNumber,
+          pendingVerification: true,
+        }));
+      } catch (err) {
+        console.error(err);
+      }
+
+      if (typeof clearCart === 'function') clearCart();
+      setShowQR(false);
+      router.push('/order-confirmation');
     } catch (err) {
       console.error(err);
+      setSubmitError('Une erreur est survenue. Réessayez ou contactez-nous sur WhatsApp.');
+    } finally {
+      setIsSubmitting(false);
     }
-    if (typeof clearCart === 'function') clearCart();
-    setShowQR(false);
-    router.push('/order-confirmation');
   };
 
   if (!isMounted) return null;
@@ -107,49 +170,113 @@ export default function CheckoutPage() {
 
       {/* QR Modal */}
       {showQR && (
-        <div className="fixed inset-0 z-50 bg-[#1C1410]/60 backdrop-blur-sm flex items-center justify-center px-6">
-          <div className="bg-[#FBF6F0] rounded-[32px] p-10 max-w-sm w-full text-center border border-[#E8D9C5] shadow-[0_30px_60px_-15px_rgba(28,20,16,0.4)]">
-            <p className="text-[#B5704A] uppercase tracking-[0.3em] text-[11px] font-semibold mb-3">
+        <div className="fixed inset-0 z-50 bg-[#1C1410]/60 backdrop-blur-sm flex items-center justify-center px-4 py-6 overflow-y-auto">
+          <div className="bg-[#FBF6F0] rounded-[28px] p-6 md:p-8 max-w-sm w-full text-center border border-[#E8D9C5] shadow-[0_30px_60px_-15px_rgba(28,20,16,0.4)] my-auto relative max-h-[92vh] overflow-y-auto">
+
+            {/* Always-visible close button */}
+            <button
+              onClick={() => !isSubmitting && setShowQR(false)}
+              disabled={isSubmitting}
+              aria-label="Fermer"
+              className="sticky top-0 float-right -mt-1 -mr-1 w-8 h-8 rounded-full bg-white border border-[#E8D9C5] text-[#1C1410]/60 hover:text-[#1C1410] hover:border-[#B5704A] transition-colors flex items-center justify-center shadow-sm disabled:opacity-40 z-10"
+            >
+              ✕
+            </button>
+
+            <p className="text-[#B5704A] uppercase tracking-[0.3em] text-[11px] font-semibold mb-2 clear-both">
               Paiement Cash Plus
             </p>
-            <h2 className="text-2xl text-[#1C1410] mb-2"
+            <h2 className="text-xl text-[#1C1410] mb-1"
               style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}>
               Scannez pour payer
             </h2>
-            <p className="text-3xl font-light text-[#1C1410] mb-6"
+            <p className="text-2xl font-light text-[#1C1410] mb-4"
               style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}>
-              {total} <span className="text-lg text-[#B5704A]">MAD</span>
+              {total} <span className="text-base text-[#B5704A]">MAD</span>
             </p>
 
-            {/* QR Code Image — met cashplus-qr.png dans public/ */}
-            <div className="w-48 h-48 mx-auto rounded-2xl overflow-hidden border-2 border-[#E8D9C5] mb-6 relative bg-white p-3">
-              <Image
-                src="/cashplus-qr.png"
-                alt="Cash Plus QR Code"
-                fill
-                className="object-contain p-2"
+            <div className="w-32 h-32 mx-auto rounded-2xl overflow-hidden border-2 border-[#E8D9C5] mb-4 relative bg-white p-2">
+              <Image src="/cashplus-qr.jpeg" alt="Cash Plus QR Code" fill className="object-contain p-1" />
+            </div>
+
+            <p className="text-[#1C1410]/60 text-[11px] mb-4 leading-relaxed">
+              Ouvrez Cash Plus → Payer → Scannez ce code → Payez <strong>{total} MAD</strong>
+            </p>
+
+            {/* ===== Payment proof section ===== */}
+            <div className="text-left bg-white/70 border border-[#E8D9C5] rounded-2xl p-3.5 mb-4">
+              <p className="text-[10px] uppercase tracking-[0.2em] text-[#B5704A] font-semibold mb-2.5">
+                Preuve de paiement *
+              </p>
+
+              <input
+                type="file"
+                accept="image/*"
+                ref={fileInputRef}
+                onChange={handleScreenshotChange}
+                className="hidden"
+              />
+
+              {screenshotPreview ? (
+                <div className="flex items-center gap-3 mb-2.5">
+                  <div className="relative w-12 h-12 rounded-xl overflow-hidden border-2 border-[#B5704A] shrink-0">
+                    <Image src={screenshotPreview} alt="Capture" fill className="object-cover" unoptimized />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-[#1C1410] font-medium">Capture ajoutée ✓</p>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      className="text-[10px] text-[#B5704A] underline"
+                    >
+                      Changer
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full border-2 border-dashed border-[#E8D9C5] rounded-xl py-3 text-[#7A4B3A]/60 hover:border-[#B5704A] hover:text-[#B5704A] transition-colors text-xs font-medium mb-2.5"
+                >
+                  📸 Ajouter la capture d'écran
+                </button>
+              )}
+
+              <input
+                type="text"
+                placeholder="Référence transaction (optionnel)"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                className="w-full text-xs p-2.5 border border-[#E8D9C5] rounded-lg bg-white text-[#1C1410] placeholder:text-[#1C1410]/35 focus:outline-none focus:border-[#B5704A]"
               />
             </div>
 
-            <p className="text-[#1C1410]/60 text-xs mb-8 leading-relaxed">
-              Ouvrez votre application Cash Plus → Payer → Scanner ce QR code → Confirmer le paiement de <strong>{total} MAD</strong>
-            </p>
+            {submitError && (
+              <p className="text-red-500 text-xs mb-3">{submitError}</p>
+            )}
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <button
                 onClick={handleQRConfirm}
-                className="w-full bg-[#1C1410] text-[#FBF6F0] py-4 rounded-full font-semibold uppercase tracking-[0.2em] text-sm hover:bg-[#B5704A] transition-colors flex items-center justify-center gap-2"
+                disabled={isSubmitting}
+                className="w-full bg-[#1C1410] text-[#FBF6F0] py-3.5 rounded-full font-semibold uppercase tracking-[0.15em] text-xs hover:bg-[#B5704A] transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-[#D4A574]" />
-                J'ai payé ✓
+                {isSubmitting ? 'Envoi en cours...' : "J'ai payé — Envoyer la preuve"}
               </button>
               <button
-                onClick={() => setShowQR(false)}
-                className="w-full text-[#7A4B3A]/60 text-sm hover:text-[#1C1410] transition-colors py-2"
+                onClick={() => !isSubmitting && setShowQR(false)}
+                disabled={isSubmitting}
+                className="w-full text-[#7A4B3A]/70 text-xs font-medium hover:text-[#1C1410] transition-colors py-2 border border-[#E8D9C5] rounded-full hover:border-[#B5704A]"
               >
-                Annuler
+                ← Annuler et revenir
               </button>
             </div>
+
+            <p className="text-[10px] text-[#7A4B3A]/45 mt-3 leading-relaxed">
+              Votre commande sera confirmée après vérification du paiement.
+            </p>
           </div>
         </div>
       )}
@@ -172,7 +299,6 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid md:grid-cols-12 gap-10">
-
           {/* Order Summary */}
           <div className="md:col-span-5">
             <div className="bg-white/80 backdrop-blur-sm p-9 rounded-[28px] shadow-[0_8px_40px_-12px_rgba(28,20,16,0.12)] border border-[#E8D9C5] relative">
@@ -270,8 +396,6 @@ export default function CheckoutPage() {
                 Mode de paiement
               </label>
               <div className="space-y-3">
-
-                {/* Online — Cash Plus QR — NOW ACTIVE */}
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('online')}
@@ -296,14 +420,13 @@ export default function CheckoutPage() {
                           </span>
                         </p>
                         <p className="text-[#7A4B3A]/60 text-xs mt-1">
-                          Livraison <strong className="text-[#B5704A]">gratuite</strong> — Scannez le QR code pour payer instantanément
+                          Livraison <strong className="text-[#B5704A]">gratuite</strong> — Scannez le QR code pour payer
                         </p>
                       </div>
                     </div>
                   </div>
                 </button>
 
-                {/* WhatsApp / COD */}
                 <button
                   type="button"
                   onClick={() => setPaymentMethod('whatsapp')}

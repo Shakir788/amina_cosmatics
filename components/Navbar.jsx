@@ -27,7 +27,6 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
-  // Yahan toggleCart ki jagah openCart lagaya taaki 100% reliably khule
   const openCart = useCartStore((state) => state.openCart);
   const cart = useCartStore((state) => state.cart);
   const router = useRouter();
@@ -37,20 +36,17 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('');
   const searchInputRef = useRef(null);
 
-  // Close menu/search on route change
   useEffect(() => {
     setMenuOpen(false);
     setSearchOpen(false);
   }, []);
 
-  // Focus search input when opened
   useEffect(() => {
     if (searchOpen) {
       setTimeout(() => searchInputRef.current?.focus(), 100);
     }
   }, [searchOpen]);
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = menuOpen ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -66,21 +62,19 @@ export default function Navbar() {
 
   return (
     <>
-      <div className="fixed top-6 left-0 right-0 z-50 px-4 md:px-12 flex justify-center">
-        <nav className="w-full max-w-[1200px] px-5 py-3.5 flex items-center justify-between bg-white/80 backdrop-blur-md border border-[#E8D9C5] rounded-full shadow-[0_8px_30px_-12px_rgba(28,20,16,0.15)]">
+      <div className="fixed top-3 sm:top-6 left-0 right-0 z-50 px-3 sm:px-4 md:px-12 flex justify-center">
+        <nav className="w-full max-w-[1200px] px-3 sm:px-5 py-2.5 sm:py-3.5 flex items-center justify-between bg-white/80 backdrop-blur-md border border-[#E8D9C5] rounded-full shadow-[0_8px_30px_-12px_rgba(28,20,16,0.15)]">
 
           {/* Left */}
-          <div className="flex-1 flex items-center gap-7">
-            {/* Hamburger — mobile only */}
+          <div className="flex-1 flex items-center gap-7 min-w-0">
             <button
               onClick={() => setMenuOpen(true)}
               aria-label="Ouvrir le menu"
-              className="md:hidden text-[#1C1410] p-1 -ml-1 hover:text-[#B5704A] transition-colors"
+              className="md:hidden text-[#1C1410] p-1 -ml-1 hover:text-[#B5704A] transition-colors shrink-0"
             >
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Desktop links */}
             <div className="hidden md:flex gap-7 text-sm font-medium text-[#1C1410]/65">
               {NAV_LINKS.map((link) => (
                 <Link key={link.href} href={link.href}
@@ -91,35 +85,36 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Center — Logo */}
-          <div className="flex-1 text-center">
-            <Link href="/" className="inline-flex items-center gap-2" onClick={() => setMenuOpen(false)}>
-              <OrangeBlossomMark className="w-3.5 h-3.5 text-[#B5704A] hidden sm:block" />
-              <h1 className="text-xl md:text-2xl tracking-tight text-[#1C1410]"
-                style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}>
+          {/* Center — Logo — smaller + no-wrap on mobile */}
+          <div className="flex-1 text-center min-w-0 px-1">
+            <Link href="/" className="inline-flex items-center gap-1.5 md:gap-2" onClick={() => setMenuOpen(false)}>
+              <OrangeBlossomMark className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#B5704A] hidden sm:block shrink-0" />
+              <h1
+                className="text-[15px] xs:text-base sm:text-xl md:text-2xl tracking-tight text-[#1C1410] whitespace-nowrap"
+                style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
+              >
                 Cosmétiques Amina
               </h1>
-              <OrangeBlossomMark className="w-3.5 h-3.5 text-[#B5704A] hidden sm:block" />
+              <OrangeBlossomMark className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#B5704A] hidden sm:block shrink-0" />
             </Link>
           </div>
 
           {/* Right — Icons */}
-          <div className="flex-1 flex justify-end items-center gap-3">
+          <div className="flex-1 flex justify-end items-center gap-1 sm:gap-3">
             <button
               onClick={() => setSearchOpen(true)}
               aria-label="Rechercher"
               className="p-1.5 text-[#1C1410]/80 hover:text-[#B5704A] transition-colors"
             >
-              <Search className="w-[18px] h-[18px]" />
+              <Search className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px]" />
             </button>
 
-            {/* Clickable Area Badha Diya (p-1.5) aur onClick mein openCart laga diya */}
-            <button 
-              onClick={openCart} 
+            <button
+              onClick={openCart}
               aria-label="Ouvrir le panier"
               className="relative p-1.5 cursor-pointer group outline-none"
             >
-              <ShoppingBag className="w-[18px] h-[18px] text-[#1C1410]/80 group-hover:text-[#B5704A] transition-colors" />
+              <ShoppingBag className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-[#1C1410]/80 group-hover:text-[#B5704A] transition-colors" />
               {cart.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-[#B5704A] text-[#FBF6F0] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {cart.length}
@@ -134,23 +129,20 @@ export default function Navbar() {
       <AnimatePresence>
         {menuOpen && (
           <>
-            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               onClick={() => setMenuOpen(false)}
               className="fixed inset-0 bg-[#1C1410]/40 backdrop-blur-sm z-[60]"
             />
 
-            {/* Drawer */}
             <motion.div
               initial={{ x: '-100%' }} animate={{ x: 0 }} exit={{ x: '-100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 220 }}
-              className="fixed top-0 left-0 h-full w-[80vw] max-w-[320px] bg-[#FBF6F0] z-[70] flex flex-col shadow-[8px_0_40px_-12px_rgba(28,20,16,0.3)] border-r border-[#E8D9C5]"
+              className="fixed top-0 left-0 h-full w-[82vw] max-w-[320px] bg-[#FBF6F0] z-[70] flex flex-col shadow-[8px_0_40px_-12px_rgba(28,20,16,0.3)] border-r border-[#E8D9C5]"
             >
-              {/* Drawer header */}
               <div className="flex items-center justify-between px-6 py-5 border-b border-[#E8D9C5]">
                 <Link href="/" onClick={() => setMenuOpen(false)}>
-                  <span className="text-lg tracking-tight text-[#1C1410]"
+                  <span className="text-base sm:text-lg tracking-tight text-[#1C1410]"
                     style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}>
                     Cosmétiques Amina
                   </span>
@@ -161,7 +153,6 @@ export default function Navbar() {
                 </button>
               </div>
 
-              {/* Nav links */}
               <nav className="flex-1 px-6 py-8 space-y-1">
                 {NAV_LINKS.map((link, idx) => (
                   <motion.div
@@ -182,7 +173,6 @@ export default function Navbar() {
                 ))}
               </nav>
 
-              {/* Footer of drawer */}
               <div className="px-6 py-6 border-t border-[#E8D9C5]">
                 <OrangeBlossomMark className="w-4 h-4 text-[#D4A574] mx-auto" />
                 <p className="text-[10px] text-center text-[#7A4B3A]/50 uppercase tracking-[0.2em] mt-2">
@@ -209,32 +199,32 @@ export default function Navbar() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.2 }}
-              className="fixed top-24 left-1/2 -translate-x-1/2 w-[90vw] max-w-lg z-[70]"
+              className="fixed top-20 sm:top-24 left-1/2 -translate-x-1/2 w-[92vw] sm:w-[90vw] max-w-lg z-[70]"
             >
               <form onSubmit={handleSearch}
                 className="bg-white rounded-2xl shadow-[0_20px_60px_-15px_rgba(28,20,16,0.3)] border border-[#E8D9C5] overflow-hidden flex items-center">
-                <Search className="w-5 h-5 text-[#B5704A] ml-5 shrink-0" />
+                <Search className="w-5 h-5 text-[#B5704A] ml-4 sm:ml-5 shrink-0" />
                 <input
                   ref={searchInputRef}
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Rechercher un produit..."
-                  className="flex-1 py-4 px-4 text-[#1C1410] placeholder:text-[#1C1410]/35 text-base focus:outline-none bg-transparent"
+                  className="flex-1 py-3.5 sm:py-4 px-3 sm:px-4 text-[#1C1410] placeholder:text-[#1C1410]/35 text-sm sm:text-base focus:outline-none bg-transparent min-w-0"
                 />
                 {searchQuery && (
                   <button type="submit"
-                    className="mr-3 bg-[#1C1410] text-[#FBF6F0] px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider hover:bg-[#B5704A] transition-colors">
+                    className="mr-2 sm:mr-3 bg-[#1C1410] text-[#FBF6F0] px-3 sm:px-4 py-2 rounded-full text-xs font-semibold uppercase tracking-wider hover:bg-[#B5704A] transition-colors shrink-0">
                     Chercher
                   </button>
                 )}
                 <button type="button" onClick={() => setSearchOpen(false)}
-                  className="mr-4 text-[#1C1410]/40 hover:text-[#1C1410] transition-colors">
+                  className="mr-3 sm:mr-4 text-[#1C1410]/40 hover:text-[#1C1410] transition-colors shrink-0">
                   <X className="w-5 h-5" />
                 </button>
               </form>
 
-              <p className="text-center text-[10px] uppercase tracking-[0.2em] text-white/60 mt-3">
+              <p className="text-center text-[10px] uppercase tracking-[0.2em] text-white/60 mt-3 hidden sm:block">
                 Appuyez sur Échap pour fermer
               </p>
             </motion.div>
