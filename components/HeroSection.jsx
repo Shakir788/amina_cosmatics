@@ -1,5 +1,6 @@
 'use client';
 import { motion } from 'framer-motion';
+import { Sparkles } from 'lucide-react';
 
 function OrangeBlossomMark() {
   return (
@@ -23,6 +24,10 @@ function OrangeBlossomMark() {
 }
 
 export default function HeroSection() {
+  const openAIDiagnostic = () => {
+    window.dispatchEvent(new Event('open-amina-ai'));
+  };
+
   return (
     <div className="relative min-h-[100svh] lg:min-h-[88vh] overflow-hidden bg-[#FBF6F0]">
       {/* ambient corner glow, subtle */}
@@ -66,11 +71,32 @@ export default function HeroSection() {
             Découvrez notre sélection des meilleures marques de cosmétiques mondiales, choisies spécialement pour votre éclat.
           </p>
 
-          <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 pt-2 w-full sm:w-auto">
+          {/* ===== AI Diagnostic CTA — the hero feature ===== */}
+          <motion.button
+            onClick={openAIDiagnostic}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="w-full sm:w-auto group relative bg-white border-2 border-[#B5704A] rounded-2xl px-6 py-4 flex items-center gap-4 shadow-[0_8px_30px_-12px_rgba(181,112,74,0.3)] hover:shadow-[0_12px_40px_-12px_rgba(181,112,74,0.4)] transition-all overflow-hidden"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-[#B5704A]/5 to-[#D4A574]/10 opacity-0 group-hover:opacity-100 transition-opacity" />
+            <div className="w-11 h-11 rounded-full bg-[#1C1410] flex items-center justify-center shrink-0 relative">
+              <Sparkles className="w-5 h-5 text-[#D4A574]" />
+            </div>
+            <div className="text-left relative">
+              <p className="text-[#1C1410] font-semibold text-sm">
+                🔍 Diagnostic peau gratuit par IA
+              </p>
+              <p className="text-[#7A4B3A]/60 text-xs mt-0.5">
+                Amina analyse votre peau en 30 secondes
+              </p>
+            </div>
+          </motion.button>
+
+          <div className="flex items-center gap-6 pt-1">
             <motion.button
               whileHover={{ scale: 1.04 }}
               whileTap={{ scale: 0.96 }}
-              className="group w-full sm:w-auto bg-[#1C1410] text-[#FBF6F0] px-8 sm:px-10 py-4 sm:py-5 rounded-full font-semibold text-sm uppercase tracking-[0.2em] shadow-xl shadow-[#1C1410]/15 transition-colors duration-300 hover:bg-[#B5704A] flex items-center justify-center gap-3"
+              className="group bg-[#1C1410] text-[#FBF6F0] px-8 sm:px-10 py-4 sm:py-5 rounded-full font-semibold text-sm uppercase tracking-[0.2em] shadow-xl shadow-[#1C1410]/15 transition-colors duration-300 hover:bg-[#B5704A] flex items-center gap-3"
             >
               <span className="w-1.5 h-1.5 rounded-full bg-[#D4A574] group-hover:bg-[#FBF6F0] transition-colors" />
               Découvrir

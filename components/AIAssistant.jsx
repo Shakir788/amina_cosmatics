@@ -13,7 +13,6 @@ const QUICK_REPLIES = [
   { label: "✨ Anti-âge", value: "Je cherche des produits anti-âge." },
 ];
 
-// Compress image before API (max 800px, quality 0.7)
 function compressImage(base64, maxWidth = 800, quality = 0.7) {
   return new Promise((resolve) => {
     const img = document.createElement('img');
@@ -107,19 +106,17 @@ export default function AIAssistant() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
   const [previewImage, setPreviewImage] = useState(null);
-  const [hasUnread, setHasUnread] = useState(false); // notification dot
-  const [viewportHeight, setViewportHeight] = useState('100dvh'); // mobile keyboard fix
+  const [hasUnread, setHasUnread] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState('100dvh');
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Scroll to bottom on new messages
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, isLoading, isAnalyzing]);
 
-  // Show notification dot after 3s if chat is closed
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!isOpen) setHasUnread(true);
@@ -127,12 +124,10 @@ export default function AIAssistant() {
     return () => clearTimeout(timer);
   }, []);
 
-  // Clear notification when opened
   useEffect(() => {
     if (isOpen) setHasUnread(false);
   }, [isOpen]);
 
-  // Mobile keyboard fix — track visual viewport height
   useEffect(() => {
     const handleResize = () => {
       if (window.visualViewport) {
@@ -185,7 +180,6 @@ export default function AIAssistant() {
       const data = await response.json();
       if (response.ok && data.reply) {
         setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
-        // Notify if chat is closed
         if (!isOpen) setHasUnread(true);
       } else {
         throw new Error(data.error || 'Error');
@@ -207,7 +201,6 @@ export default function AIAssistant() {
     sendMessage();
   };
 
-  // Enter to send, Shift+Enter for newline
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -273,7 +266,6 @@ export default function AIAssistant() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {/* Clear chat button */}
                   <button
                     onClick={clearChat}
                     title="Nouvelle consultation"
@@ -282,7 +274,6 @@ export default function AIAssistant() {
                     <RefreshCw className="w-4 h-4" />
                   </button>
 
-                  {/* WhatsApp handoff */}
                   <a
                     href="https://wa.me/212723908603?text=Bonjour, j'ai besoin d'aide avec ma consultation beauté."
                     target="_blank"
@@ -293,7 +284,6 @@ export default function AIAssistant() {
                     <MessageCircle className="w-4 h-4" />
                   </a>
 
-                  {/* Close */}
                   <button
                     onClick={() => setIsOpen(false)}
                     className="text-[#FBF6F0]/50 hover:text-[#FBF6F0] transition-colors p-1.5 rounded-full hover:bg-white/10"
@@ -330,7 +320,6 @@ export default function AIAssistant() {
                   </div>
                 ))}
 
-                {/* Quick replies — only shown at start */}
                 {showQuickReplies && (
                   <div className="flex flex-wrap gap-2 pt-1">
                     {QUICK_REPLIES.map((qr) => (
@@ -418,7 +407,6 @@ export default function AIAssistant() {
             <AminaAvatar size={56} className="w-full h-full rounded-full" />
           )}
 
-          {/* Notification dot */}
           {hasUnread && !isOpen && (
             <span
               className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 border-2 border-white rounded-full"
