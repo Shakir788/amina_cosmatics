@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowRight, Sparkles, Droplets, Sun, Wind, Leaf } from 'lucide-react';
 import { useCartStore } from '../store/useCartStore';
+import { useQuizStore } from '../store/useQuizStore';
 
 const SKIN_LABELS = {
   dry: "peau sèche",
@@ -11,13 +12,6 @@ const SKIN_LABELS = {
   normal: "peau normale",
 };
 
-/**
- * The quiz has a fixed length of 10 steps, but step 4 (concernDetail) changes
- * its question and options depending on what was picked at step 3 (concern).
- * Every other question is fixed. Because steps are answered in order, by the
- * time we render a branch-dependent question, the answer it depends on
- * already exists in `answers`.
- */
 function getQuizQuestions(answers) {
   const concernDetailByConcern = {
     glow: {
@@ -178,8 +172,6 @@ const MOMENT_INSTRUCTIONS = {
   both: "Matin : nettoyant → sérum → SPF. Soir : nettoyant → sérum → crème (le rétinol s'applique uniquement le soir).",
 };
 
-// Base matrix: skinType x concern. "normal" and any unmapped skin type
-// fall back to the balanced "combination" formulation.
 const RECOMMENDATIONS = {
   glow: {
     dry: {
@@ -269,13 +261,11 @@ function getRecommendation(answers) {
   let products = [...base.products];
   const notes = [];
 
-  // Routine depth changes what's actually in the bundle.
   if (answers.routineDepth === 'complete') {
     const extra = COMPLEMENTARY_PRODUCTS[answers.concern];
     if (extra) products = [...products, extra];
   }
 
-  // No daily SPF -> the routine isn't complete without it, so we add it.
   const spfIncluded = answers.spf === 'never';
   if (spfIncluded && !products.some(p => p._id === SPF_PRODUCT._id)) {
     products = [...products, SPF_PRODUCT];
@@ -323,13 +313,35 @@ function getRecommendation(answers) {
   };
 }
 
-export default function SkinQuiz({ isOpen, onClose }) {
+export default function SkinQuiz() {
+  const [mounted, setMounted] = useState(false);
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
+  // ✅ FIX: Same Zustand store as HeroSection's button — single source of truth
+  const isOpen = useQuizStore((state) => state.isOpen);
+  const closeQuiz = useQuizStore((state) => state.closeQuiz);
+
   const addToCart = useCartStore((state) => state.addToCart);
   const openCart = useCartStore((state) => state.openCart);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Reset quiz state whenever it's opened fresh
+  useEffect(() => {
+    if (isOpen) {
+      setStep(0);
+      setAnswers({});
+      setIsAnalyzing(false);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    closeQuiz();
+  };
 
   const questions = getQuizQuestions(answers);
   const totalSteps = questions.length;
@@ -341,27 +353,20 @@ export default function SkinQuiz({ isOpen, onClose }) {
     if (step < totalSteps - 1) {
       setStep(step + 1);
     } else {
-      // Finish Quiz -> Start Analysis
       setIsAnalyzing(true);
       setStep(step + 1);
       setTimeout(() => {
         setIsAnalyzing(false);
-      }, 2500); // 2.5 seconds of fake analyzing for premium feel
+      }, 2500); 
     }
   };
 
   const handleAddBundle = (routine) => {
     routine.products.forEach(prod => {
-      addToCart({ id: prod._id, name: prod.name, price: `${prod.price} MAD` });
+      addToCart({ id: prod._id, name: prod.name, price: `${prod.price} MAD`, quantity: 1 });
     });
-    onClose(); // Close modal
-    openCart(); // Open cart to close the sale
-  };
-
-  const resetQuiz = () => {
-    setStep(0);
-    setAnswers({});
-    onClose();
+    handleClose(); 
+    setTimeout(() => openCart(), 300); 
   };
 
   const recommendation = getRecommendation(answers);
@@ -373,191 +378,201 @@ export default function SkinQuiz({ isOpen, onClose }) {
     optionCount === 4 ? 'sm:grid-cols-2 lg:grid-cols-4' :
     'sm:grid-cols-3';
 
+  if (!mounted || !isOpen) return null;
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-[#FBF6F0]/90 backdrop-blur-md p-4 sm:p-6"
-        >
-          <button onClick={resetQuiz} className="absolute top-6 right-6 p-2 text-[#1C1410]/50 hover:text-[#1C1410] transition-colors">
-            <X className="w-8 h-8" />
-          </button>
+    <motion.div
+      key="skin-quiz-modal"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.2 }}
+      onClick={handleClose} 
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-[#FBF6F0]/90 backdrop-blur-md p-4 sm:p-6 cursor-pointer"
+    >
+      {/* Close Button */}
+      <button 
+        type="button" 
+        onClick={(e) => { e.stopPropagation(); handleClose(); }} 
+        className="absolute top-4 right-4 md:top-8 md:right-8 p-3 bg-white/50 rounded-full text-[#1C1410]/70 hover:text-[#1C1410] hover:bg-[#E8D9C5] transition-all z-[10000] shadow-sm"
+      >
+        <X className="w-6 h-6 md:w-8 md:h-8" />
+      </button>
 
-          <div className="w-full max-w-2xl bg-white border border-[#E8D9C5] rounded-[40px] shadow-[0_30px_60px_-15px_rgba(28,20,16,0.1)] relative min-h-[500px] max-h-[90vh] overflow-y-auto overflow-x-hidden flex flex-col">
+      <div 
+        onClick={(e) => e.stopPropagation()} 
+        className="w-full max-w-2xl bg-white border border-[#E8D9C5] rounded-[40px] shadow-[0_30px_60px_-15px_rgba(28,20,16,0.1)] relative min-h-[500px] max-h-[90vh] overflow-y-auto overflow-x-hidden flex flex-col cursor-default"
+      >
 
-            {/* Top Progress Bar */}
-            {step < totalSteps && (
-              <div className="h-1.5 bg-[#F0E4D4] w-full absolute top-0 left-0">
-                <motion.div
-                  className="h-full bg-[#B5704A]"
-                  initial={{ width: '0%' }}
-                  animate={{ width: `${(step / totalSteps) * 100}%` }}
-                  transition={{ duration: 0.5 }}
-                />
-              </div>
+        {/* Top Progress Bar */}
+        {step < totalSteps && (
+          <div className="h-1.5 bg-[#F0E4D4] w-full absolute top-0 left-0">
+            <motion.div
+              className="h-full bg-[#B5704A]"
+              initial={{ width: '0%' }}
+              animate={{ width: `${(step / totalSteps) * 100}%` }}
+              transition={{ duration: 0.5 }}
+            />
+          </div>
+        )}
+
+        <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12 mt-4">
+          <AnimatePresence mode="wait">
+
+            {step < totalSteps && currentQuestion && (
+              <motion.div
+                key={`step-${step}`}
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.4 }}
+                className="w-full text-center"
+              >
+                <span className="text-[11px] uppercase tracking-[0.3em] text-[#B5704A] font-semibold mb-4 block">
+                  Étape {step + 1} sur {totalSteps}
+                </span>
+                <h2
+                  className="text-3xl sm:text-4xl text-[#1C1410] mb-10"
+                  style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
+                >
+                  {currentQuestion.title}
+                </h2>
+
+                <div className={`grid grid-cols-1 ${gridColsClass} gap-4`}>
+                  {currentQuestion.options.map((opt) => {
+                    const Icon = opt.icon;
+                    return (
+                      <button
+                        type="button"
+                        key={opt.value}
+                        onClick={() => handleSelect(currentQuestion.id, opt.value)}
+                        className="group flex flex-col items-center justify-center p-6 border border-[#E8D9C5] rounded-3xl hover:border-[#B5704A] hover:bg-[#FBF6F0] transition-all duration-300 active:scale-95"
+                      >
+                        {Icon && <Icon className="w-8 h-8 text-[#1C1410]/40 group-hover:text-[#B5704A] mb-3 transition-colors" />}
+                        <span className="font-medium text-[#1C1410]">{opt.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </motion.div>
             )}
 
-            <div className="flex-1 flex flex-col items-center justify-center p-8 sm:p-12">
-              <AnimatePresence mode="wait">
-
-                {step < totalSteps && currentQuestion && (
+            {/* Analyzing Step */}
+            {step === totalSteps && isAnalyzing && (
+              <motion.div
+                key="analyzing"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 1.1 }}
+                className="flex flex-col items-center text-center"
+              >
+                <div className="w-20 h-20 mb-6 relative flex items-center justify-center">
+                  <div className="absolute inset-0 border-4 border-[#F0E4D4] rounded-full" />
                   <motion.div
-                    key={`step-${step}`}
-                    initial={{ opacity: 0, x: 20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20 }}
-                    transition={{ duration: 0.4 }}
-                    className="w-full text-center"
-                  >
-                    <span className="text-[11px] uppercase tracking-[0.3em] text-[#B5704A] font-semibold mb-4 block">
-                      Étape {step + 1} sur {totalSteps}
-                    </span>
-                    <h2
-                      className="text-3xl sm:text-4xl text-[#1C1410] mb-10"
-                      style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
-                    >
-                      {currentQuestion.title}
-                    </h2>
+                    className="absolute inset-0 border-4 border-[#B5704A] rounded-full border-t-transparent"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  />
+                  <Sparkles className="w-8 h-8 text-[#D4A574]" />
+                </div>
+                <h2 className="text-2xl text-[#1C1410] font-serif mb-2">Analyse en cours...</h2>
+                <p className="text-[#1C1410]/60 text-sm max-w-sm">
+                  Croisement de vos 10 réponses : {skinLabel}
+                  {answers.sensitivity === 'sensitive' ? ', peau sensible' : ''}, priorité{' '}
+                  {answers.concern === 'glow' && "éclat & taches"}
+                  {answers.concern === 'hydration' && "hydratation"}
+                  {answers.concern === 'aging' && "anti-âge"}
+                  , climat {answers.climate === 'humid' ? 'humide' : answers.climate === 'dry_climate' ? 'sec' : 'urbain'}…
+                </p>
+              </motion.div>
+            )}
 
-                    <div className={`grid grid-cols-1 ${gridColsClass} gap-4`}>
-                      {currentQuestion.options.map((opt) => {
-                        const Icon = opt.icon;
-                        return (
-                          <button
-                            key={opt.value}
-                            onClick={() => handleSelect(currentQuestion.id, opt.value)}
-                            className="group flex flex-col items-center justify-center p-6 border border-[#E8D9C5] rounded-3xl hover:border-[#B5704A] hover:bg-[#FBF6F0] transition-all duration-300 active:scale-95"
-                          >
-                            {Icon && <Icon className="w-8 h-8 text-[#1C1410]/40 group-hover:text-[#B5704A] mb-3 transition-colors" />}
-                            <span className="font-medium text-[#1C1410]">{opt.label}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </motion.div>
-                )}
+            {/* Result Step */}
+            {step === totalSteps && !isAnalyzing && recommendation && (
+              <motion.div
+                key="result"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="w-full max-w-lg text-center"
+              >
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#D4A574]/10 text-[#B5704A] mb-6">
+                  <Sparkles className="w-8 h-8" />
+                </div>
 
-                {/* Analyzing Step — references the actual answers collected so far */}
-                {step === totalSteps && isAnalyzing && (
-                  <motion.div
-                    key="analyzing"
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 1.1 }}
-                    className="flex flex-col items-center text-center"
-                  >
-                    <div className="w-20 h-20 mb-6 relative flex items-center justify-center">
-                      <div className="absolute inset-0 border-4 border-[#F0E4D4] rounded-full" />
-                      <motion.div
-                        className="absolute inset-0 border-4 border-[#B5704A] rounded-full border-t-transparent"
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                      />
-                      <Sparkles className="w-8 h-8 text-[#D4A574]" />
-                    </div>
-                    <h2 className="text-2xl text-[#1C1410] font-serif mb-2">Analyse en cours...</h2>
-                    <p className="text-[#1C1410]/60 text-sm max-w-sm">
-                      Croisement de vos 10 réponses : {skinLabel}
-                      {answers.sensitivity === 'sensitive' ? ', peau sensible' : ''}, priorité{' '}
-                      {answers.concern === 'glow' && "éclat & taches"}
-                      {answers.concern === 'hydration' && "hydratation"}
-                      {answers.concern === 'aging' && "anti-âge"}
-                      , climat {answers.climate === 'humid' ? 'humide' : answers.climate === 'dry_climate' ? 'sec' : 'urbain'}…
-                    </p>
-                  </motion.div>
-                )}
-
-                {/* Result Step */}
-                {step === totalSteps && !isAnalyzing && recommendation && (
-                  <motion.div
-                    key="result"
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="w-full max-w-lg text-center"
-                  >
-                    <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#D4A574]/10 text-[#B5704A] mb-6">
-                      <Sparkles className="w-8 h-8" />
-                    </div>
-
-                    <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
-                      <span className="text-[11px] uppercase tracking-[0.3em] text-[#B5704A] font-semibold">
-                        {skinLabel}
-                      </span>
+                <div className="flex items-center justify-center gap-2 mb-3 flex-wrap">
+                  <span className="text-[11px] uppercase tracking-[0.3em] text-[#B5704A] font-semibold">
+                    {skinLabel}
+                  </span>
+                  <span className="text-[11px] text-[#1C1410]/40">•</span>
+                  <span className="text-[11px] uppercase tracking-[0.3em] text-[#1C1410]/50 font-semibold">
+                    {recommendation.isComplete ? 'Rituel complet' : 'Rituel essentiel'}
+                  </span>
+                  {recommendation.isSensitive && (
+                    <>
                       <span className="text-[11px] text-[#1C1410]/40">•</span>
                       <span className="text-[11px] uppercase tracking-[0.3em] text-[#1C1410]/50 font-semibold">
-                        {recommendation.isComplete ? 'Rituel complet' : 'Rituel essentiel'}
+                        Peau sensible
                       </span>
-                      {recommendation.isSensitive && (
-                        <>
-                          <span className="text-[11px] text-[#1C1410]/40">•</span>
-                          <span className="text-[11px] uppercase tracking-[0.3em] text-[#1C1410]/50 font-semibold">
-                            Peau sensible
-                          </span>
-                        </>
-                      )}
-                      {recommendation.spfIncluded && (
-                        <>
-                          <span className="text-[11px] text-[#1C1410]/40">•</span>
-                          <span className="text-[11px] uppercase tracking-[0.3em] text-[#1C1410]/50 font-semibold">
-                            SPF ajouté
-                          </span>
-                        </>
-                      )}
-                    </div>
+                    </>
+                  )}
+                  {recommendation.spfIncluded && (
+                    <>
+                      <span className="text-[11px] text-[#1C1410]/40">•</span>
+                      <span className="text-[11px] uppercase tracking-[0.3em] text-[#1C1410]/50 font-semibold">
+                        SPF ajouté
+                      </span>
+                    </>
+                  )}
+                </div>
 
-                    <h2
-                      className="text-3xl sm:text-4xl text-[#1C1410] mb-4"
-                      style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
-                    >
-                      {recommendation.name}
-                    </h2>
-                    <p className="text-[#1C1410]/70 mb-6 leading-relaxed">
-                      {recommendation.description}
-                    </p>
+                <h2
+                  className="text-3xl sm:text-4xl text-[#1C1410] mb-4"
+                  style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
+                >
+                  {recommendation.name}
+                </h2>
+                <p className="text-[#1C1410]/70 mb-6 leading-relaxed">
+                  {recommendation.description}
+                </p>
 
-                    {recommendation.notes.length > 0 && (
-                      <div className="text-left bg-white border border-[#E8D9C5] rounded-3xl p-5 mb-6 space-y-2">
-                        <span className="text-[10px] uppercase tracking-[0.25em] text-[#B5704A] font-semibold block mb-2">
-                          Votre analyse personnalisée
-                        </span>
-                        {recommendation.notes.map((note, i) => (
-                          <p key={i} className="text-sm text-[#1C1410]/70 leading-relaxed">
-                            • {note}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="bg-[#FBF6F0] border border-[#E8D9C5] rounded-3xl p-6 mb-8 text-left space-y-4">
-                      {recommendation.products.map(prod => (
-                        <div key={prod._id} className="flex justify-between items-center pb-4 border-b border-[#E8D9C5]/50 last:border-0 last:pb-0">
-                          <span className="font-medium text-[#1C1410]">{prod.name}</span>
-                          <span className="text-[#B5704A] font-semibold">{prod.price} MAD</span>
-                        </div>
-                      ))}
-                      <div className="flex justify-between items-center pt-2 text-sm text-[#1C1410]/60">
-                        <span>Total routine</span>
-                        <span>{recommendation.total} MAD</span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => handleAddBundle(recommendation)}
-                      className="w-full bg-[#1C1410] text-[#FBF6F0] py-4.5 rounded-full font-semibold uppercase tracking-[0.2em] text-sm hover:bg-[#B5704A] transition-colors duration-300 active:scale-95 shadow-lg flex items-center justify-center gap-2"
-                    >
-                      Ajouter la routine au panier <ArrowRight className="w-4 h-4" />
-                    </button>
-                  </motion.div>
+                {recommendation.notes.length > 0 && (
+                  <div className="text-left bg-white border border-[#E8D9C5] rounded-3xl p-5 mb-6 space-y-2">
+                    <span className="text-[10px] uppercase tracking-[0.25em] text-[#B5704A] font-semibold block mb-2">
+                      Votre analyse personnalisée
+                    </span>
+                    {recommendation.notes.map((note, i) => (
+                      <p key={i} className="text-sm text-[#1C1410]/70 leading-relaxed">
+                        • {note}
+                      </p>
+                    ))}
+                  </div>
                 )}
 
-              </AnimatePresence>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+                <div className="bg-[#FBF6F0] border border-[#E8D9C5] rounded-3xl p-6 mb-8 text-left space-y-4">
+                  {recommendation.products.map(prod => (
+                    <div key={prod._id} className="flex justify-between items-center pb-4 border-b border-[#E8D9C5]/50 last:border-0 last:pb-0">
+                      <span className="font-medium text-[#1C1410]">{prod.name}</span>
+                      <span className="text-[#B5704A] font-semibold">{prod.price} MAD</span>
+                    </div>
+                  ))}
+                  <div className="flex justify-between items-center pt-2 text-sm text-[#1C1410]/60">
+                    <span>Total routine</span>
+                    <span>{recommendation.total} MAD</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => handleAddBundle(recommendation)}
+                  className="w-full bg-[#1C1410] text-[#FBF6F0] py-4.5 rounded-full font-semibold uppercase tracking-[0.2em] text-sm hover:bg-[#B5704A] transition-colors duration-300 active:scale-95 shadow-lg flex items-center justify-center gap-2"
+                >
+                  Ajouter la routine au panier <ArrowRight className="w-4 h-4" />
+                </button>
+              </motion.div>
+            )}
+
+          </AnimatePresence>
+        </div>
+      </div>
+    </motion.div>
   );
 }

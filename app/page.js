@@ -1,6 +1,5 @@
 import HeroSection from '../components/HeroSection';
 import ProductGrid from '../components/ProductGrid';
-import SkinQuizBanner from '../components/SkinQuizBanner'; 
 import { client } from '../sanity/client'; 
 
 export const revalidate = 0;
@@ -21,7 +20,6 @@ function OrangeBlossomDivider() {
 }
 
 async function getCosmetics() {
-  // Fetches up to 50 products
   const query = `*[_type == "cosmeticProduct"] | order(_createdAt desc)[0...50] {
     _id,
     name,
@@ -53,7 +51,6 @@ export default async function Home() {
 
       <div className="px-6 md:px-12 max-w-[1400px] mx-auto w-full">
         
-        {/* 1. PRODUCT GRID SECTION (Directly after Hero for max conversions) */}
         <section className="mt-12 mb-16">
           <div className="text-center mb-14">
             <p className="text-[#B5704A] uppercase tracking-[0.35em] text-[11px] font-semibold mb-3">
@@ -68,11 +65,6 @@ export default async function Home() {
             <OrangeBlossomDivider />
           </div>
           <ProductGrid products={products} />
-        </section>
-
-        {/* 2. SKIN QUIZ BANNER */}
-        <section className="mb-24">
-          <SkinQuizBanner />
         </section>
         
       </div>

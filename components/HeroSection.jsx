@@ -1,24 +1,14 @@
 'use client';
 import { motion } from 'framer-motion';
 import { Sparkles, ClipboardList, ArrowRight, Gift } from 'lucide-react'; 
-import Link from 'next/link';
+import { useQuizStore } from '../store/useQuizStore'; // 🌟 Store import kiya
 
 function OrangeBlossomMark() {
   return (
     <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" aria-hidden="true">
       <circle cx="12" cy="12" r="1.6" fill="#B5704A" />
       {[0, 72, 144, 216, 288].map((deg) => (
-        <ellipse
-          key={deg}
-          cx="12"
-          cy="6.5"
-          rx="2"
-          ry="3.4"
-          fill="none"
-          stroke="#B5704A"
-          strokeWidth="1"
-          transform={`rotate(${deg} 12 12)`}
-        />
+        <ellipse key={deg} cx="12" cy="6.5" rx="2" ry="3.4" fill="none" stroke="#B5704A" strokeWidth="1" transform={`rotate(${deg} 12 12)`} />
       ))}
     </svg>
   );
@@ -28,6 +18,9 @@ export default function HeroSection() {
   const openAIDiagnostic = () => {
     window.dispatchEvent(new Event('open-amina-ai'));
   };
+
+  // 🌟 Button click ke liye store ka function
+  const openQuiz = useQuizStore((state) => state.openQuiz);
 
   return (
     <div className="relative min-h-[100svh] lg:min-h-[88vh] overflow-hidden bg-[#FBF6F0]">
@@ -62,36 +55,30 @@ export default function HeroSection() {
             </span>
           </h1>
 
-                <p className="text-base sm:text-lg text-[#1C1410]/60 max-w-md leading-relaxed">
-                Découvrez notre sélection des meilleures marques mondiales. Profitez de notre <strong className="text-[#B5704A] font-semibold">analyse de peau 100% gratuite</strong> pour trouver votre routine sur-mesure.
-                </p>
+          <p className="text-base sm:text-lg text-[#1C1410]/60 max-w-md leading-relaxed">
+            Découvrez notre sélection des meilleures marques mondiales. Profitez de notre <strong className="text-[#B5704A] font-semibold">analyse de peau 100% gratuite</strong> pour trouver votre routine sur-mesure.
+          </p>
 
-          {/* ===== 🌟 HIGH-CONVERTING WIDGETS WITH "100% GRATUIT" HIGHLIGHTS ===== */}
           <div className="w-full max-w-xl flex flex-col sm:flex-row gap-4 mt-2 mb-2">
             
-            {/* 1. AI Diagnostic Widget (Highlighted FREE) */}
+            {/* 1. AI Diagnostic Widget */}
             <motion.button
               onClick={openAIDiagnostic}
               whileHover={{ scale: 1.02, y: -4 }}
               whileTap={{ scale: 0.98 }}
               className="group flex-1 relative rounded-[1.5rem] p-[2px] overflow-hidden text-left"
             >
-              {/* Animated Gradient Background */}
               <div className="absolute inset-0 bg-gradient-to-br from-[#B5704A] via-[#E8D9C5] to-[#D4A574] opacity-50 group-hover:opacity-100 transition-opacity duration-500" />
-              
               <div className="relative h-full bg-white/95 backdrop-blur-xl rounded-[1.4rem] p-5 flex flex-col gap-3 shadow-[0_8px_30px_rgba(181,112,74,0.15)] group-hover:shadow-[0_15px_40px_rgba(181,112,74,0.25)] transition-all">
                 <div className="flex items-center justify-between">
                   <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#FBF6F0] to-[#E8D9C5] flex items-center justify-center shrink-0 border border-[#D4A574]/30 group-hover:scale-110 transition-transform duration-300">
                     <Sparkles className="w-5 h-5 text-[#B5704A]" />
                   </div>
-
-                  {/* 🎁 HIGHLIGHTED "100% GRATUIT" BADGE */}
                   <span className="inline-flex items-center gap-1 bg-[#B5704A] text-white px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-wider shadow-sm animate-pulse">
                     <Gift className="w-3 h-3 text-[#FBF6F0]" />
                     100% Gratuit
                   </span>
                 </div>
-
                 <div>
                   <h3 className="text-[#1C1410] font-bold text-[15px] tracking-tight flex items-center gap-1.5">
                     Diagnostic IA
@@ -103,44 +90,36 @@ export default function HeroSection() {
               </div>
             </motion.button>
 
-            {/* 2. Skin Quiz Widget (Highlighted FREE) */}
-            <Link href="/quiz" className="block flex-1">
-              <motion.div
-                whileHover={{ scale: 1.02, y: -4 }}
-                whileTap={{ scale: 0.98 }}
-                className="group relative h-full rounded-[1.5rem] p-[2px] overflow-hidden text-left"
-              >
-                {/* Animated Dark Gradient Background */}
-                <div className="absolute inset-0 bg-gradient-to-br from-[#1C1410] via-[#D4A574]/60 to-[#1C1410] opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
-                
-                <div className="relative h-full bg-[#1C1410] rounded-[1.4rem] p-5 flex flex-col gap-3 shadow-[0_8px_30px_rgba(28,20,16,0.2)] group-hover:shadow-[0_15px_40px_rgba(28,20,16,0.35)] transition-all">
-                  <div className="flex items-center justify-between">
-                    <div className="w-11 h-11 rounded-full bg-[#2A1E18] flex items-center justify-center shrink-0 border border-[#D4A574]/20 group-hover:border-[#D4A574] group-hover:bg-[#B5704A]/20 transition-colors duration-300">
-                      <ClipboardList className="w-5 h-5 text-[#D4A574]" />
-                    </div>
-
-                    {/* 🎁 HIGHLIGHTED "GRATUIT" GOLD BADGE */}
-                    <span className="inline-flex items-center gap-1 bg-[#D4A574]/20 border border-[#D4A574]/40 text-[#D4A574] px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-wider">
-                      Gratuit
-                    </span>
+            {/* 2. Skin Quiz Widget (Button Trigger for Modal) */}
+            <motion.button
+              onClick={openQuiz} // 🌟 YAHAN BUTTON STORE SE CONNECT HO GAYA
+              whileHover={{ scale: 1.02, y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              className="group flex-1 relative rounded-[1.5rem] p-[2px] overflow-hidden text-left"
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-[#1C1410] via-[#D4A574]/60 to-[#1C1410] opacity-80 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative h-full bg-[#1C1410] rounded-[1.4rem] p-5 flex flex-col gap-3 shadow-[0_8px_30px_rgba(28,20,16,0.2)] group-hover:shadow-[0_15px_40px_rgba(28,20,16,0.35)] transition-all">
+                <div className="flex items-center justify-between">
+                  <div className="w-11 h-11 rounded-full bg-[#2A1E18] flex items-center justify-center shrink-0 border border-[#D4A574]/20 group-hover:border-[#D4A574] group-hover:bg-[#B5704A]/20 transition-colors duration-300">
+                    <ClipboardList className="w-5 h-5 text-[#D4A574]" />
                   </div>
-
-                  <div>
-                    <h3 className="text-[#FBF6F0] font-bold text-[15px] tracking-tight flex items-center justify-between">
-                      Quiz Beauté
-                      <ArrowRight className="w-4 h-4 text-[#D4A574] group-hover:translate-x-1 transition-transform" />
-                    </h3>
-                    <p className="text-[#D4A574] text-xs font-semibold mt-0.5">
-                      Routine sur-mesure offerte ✨
-                    </p>
-                  </div>
+                  <span className="inline-flex items-center gap-1 bg-[#D4A574]/20 border border-[#D4A574]/40 text-[#D4A574] px-2.5 py-1 rounded-full text-[9px] font-extrabold uppercase tracking-wider">
+                    Gratuit
+                  </span>
                 </div>
-              </motion.div>
-            </Link>
-
+                <div>
+                  <h3 className="text-[#FBF6F0] font-bold text-[15px] tracking-tight flex items-center justify-between">
+                    Quiz Beauté
+                    <ArrowRight className="w-4 h-4 text-[#D4A574] group-hover:translate-x-1 transition-transform" />
+                  </h3>
+                  <p className="text-[#D4A574] text-xs font-semibold mt-0.5">
+                    Routine sur-mesure offerte ✨
+                  </p>
+                </div>
+              </div>
+            </motion.button>
           </div>
 
-          {/* ===== Découvrir ===== */}
           <div className="flex items-center gap-6 pt-2">
             <motion.button
               whileHover={{ scale: 1.04 }}
@@ -158,7 +137,6 @@ export default function HeroSection() {
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 1, delay: 0.2 }}
-          // 🌟 YAHAN CHANGE KIYA HAI: 'hidden lg:flex' add kiya taaki phone pe na dikhe
           className="hidden lg:flex flex-1 w-full max-w-sm relative justify-end"
         >
           <div className="relative w-full max-w-[320px] aspect-[9/16] rounded-[2rem] overflow-hidden shadow-[0_30px_60px_-15px_rgba(28,20,16,0.35)] ring-1 ring-[#E8D9C5]">
@@ -180,7 +158,6 @@ export default function HeroSection() {
             </span>
           </div>
         </motion.div>
-
       </div>
     </div>
   );

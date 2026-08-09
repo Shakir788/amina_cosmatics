@@ -5,6 +5,7 @@ import CartDrawer from '../components/CartDrawer';
 import Footer from '../components/Footer';
 import AIAssistant from '../components/AIAssistant'; // Floating AI Closer
 import FloatingReelsPill from '../components/FloatingReelsPill'; // 🌟 Naya Reels Button
+import SkinQuiz from '../components/SkinQuiz'; // 🌟 Naya Skin Quiz Modal Import Kiya
 
 // Font optimization for ultra-fast loading
 const inter = Inter({
@@ -48,6 +49,7 @@ export default function RootLayout({ children }) {
         <CartDrawer />
         <AIAssistant /> {/* Floating AI Assistant */}
         <FloatingReelsPill /> {/* 🌟 Maison Reels Floating Button */}
+        <SkinQuiz /> {/* 🌟 Skin Quiz Modal Yahan Add Ho Gaya */}
 
       </body>
     </html>
