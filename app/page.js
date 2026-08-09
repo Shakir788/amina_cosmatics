@@ -1,6 +1,7 @@
 import HeroSection from '../components/HeroSection';
 import ProductGrid from '../components/ProductGrid';
 import { client } from '../sanity/client'; 
+import ReelsSection from '../components/ReelsSection'; 
 
 export const revalidate = 0;
 
@@ -65,6 +66,7 @@ export default async function Home() {
             <OrangeBlossomDivider />
           </div>
           <ProductGrid products={products} />
+          <ReelsSection products={products} />
         </section>
         
       </div>
