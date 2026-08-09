@@ -11,25 +11,27 @@ const fallbackModels = [
 async function getProductsForAI() {
   try {
     const products = await client.fetch(`
-      *[_type == "cosmeticProduct" && inStock != false] | order(_createdAt desc)[0...20] {
+      *[_type == "cosmeticProduct" && inStock != false] | order(_createdAt desc)[0...30] {
+        _id,
+        "slug": slug.current,
         "name": coalesce(name_fr, name),
         price,
         category,
-        "description": coalesce(description_fr, description)
+        "description": coalesce(description_fr, description),
+        "imageUrl": image.asset->url
       }
     `);
 
-    if (!products || products.length === 0) return "Aucun produit disponible pour le moment.";
+    if (!products || products.length === 0) return { text: "Aucun produit disponible pour le moment.", products: [] };
 
-    return products
-      .map(p => `- "${p.name}" (${p.category || 'Beauté'}) - ${p.price} MAD${p.description ? ` : ${p.description}` : ''}`)
+    const text = products
+      .map(p => `- ID:${p._id} | "${p.name}" (${p.category || 'Beauté'}) - ${p.price} MAD${p.description ? ` : ${p.description}` : ''}`)
       .join('\n');
+
+    return { text, products };
   } catch (err) {
     console.error('Sanity products fetch error:', err);
-    // Fallback si Sanity échoue
-    return `- "Sérum Éclat" (Soins) - 350 MAD
-- "Crème Hydratante Nuit" (Soins) - 280 MAD
-- "Oud Royal" (Parfums) - 850 MAD`;
+    return { text: "Aucun produit disponible.", products: [] };
   }
 }
 
@@ -82,6 +84,13 @@ PM: [evening steps]
 STEP 5 — FOLLOW UP:
 After recommendations, ask if they have questions or want to order.
 
+=== CRITICAL: PRODUCT RECOMMENDATION FORMAT ===
+Whenever you recommend specific products (max 3), you MUST end your response with a special block like this, using the EXACT product IDs from the catalogue below:
+
+[[RECOMMENDED_PRODUCTS: ID1, ID2, ID3]]
+
+This block must be on its own line at the very end of your message. Only include this block when you are actually recommending specific products by name. Do NOT include it during the intake questions phase (name, age, concern, etc.) — only after you give the actual skin analysis / recommendations.
+
 === IMPORTANT RULES ===
 - Ask ONE question at a time — never dump all questions at once
 - Keep responses SHORT (max 3-4 sentences) until photo/full analysis
@@ -89,13 +98,12 @@ After recommendations, ask if they have questions or want to order.
 - NEVER give advice for serious skin conditions (refer to a real doctor)
 - ALWAYS mention exact prices when recommending products
 - If customer seems ready to buy, guide them to add to cart
+- ALWAYS use the [[RECOMMENDED_PRODUCTS: ...]] block with real IDs when you name specific products
 `;
-
-  const skinAnalysisInstructions = '';
 
   return `${basePersona}
 
-=== NOTRE CATALOGUE (produits disponibles) ===
+=== NOTRE CATALOGUE (produits disponibles avec leurs ID) ===
 ${productsText}
 
 RÈGLES IMPORTANTES :
@@ -106,6 +114,18 @@ RÈGLES IMPORTANTES :
 - Limite tes réponses à 250 mots maximum pour rester lisible sur mobile`;
 }
 
+// Extract [[RECOMMENDED_PRODUCTS: id1, id2]] block, return clean text + matched product objects
+function extractRecommendations(rawText, allProducts) {
+  const match = rawText.match(/\[\[RECOMMENDED_PRODUCTS:\s*([^\]]+)\]\]/);
+  if (!match) {
+    return { text: rawText.trim(), recommendedProducts: [] };
+  }
+  const ids = match[1].split(',').map(s => s.trim()).filter(Boolean);
+  const recommendedProducts = allProducts.filter(p => ids.includes(p._id));
+  const text = rawText.replace(/\[\[RECOMMENDED_PRODUCTS:[^\]]+\]\]/, '').trim();
+  return { text, recommendedProducts };
+}
+
 export async function POST(request) {
   try {
     const { messages } = await request.json();
@@ -114,64 +134,40 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Invalid messages format' }, { status: 400 });
     }
 
-    // Check if any message contains an image
     const hasImage = messages.some(msg => msg.image);
 
-    // Sanity se real products fetch karo
-    const productsText = await getProductsForAI();
+    const { text: productsText, products: allProducts } = await getProductsForAI();
     const systemPromptText = buildSystemPrompt(productsText, hasImage);
 
-    // ==========================================
-    // GEMINI (Primary — handles both image + text)
-    // ==========================================
     if (process.env.GEMINI_API_KEY) {
       try {
-        // Model selection:
-        // Image ke saath → gemini-3.1-pro-preview (best vision + reasoning)
-        // Normal chat → gemini-3.5-flash (fast + free tier friendly)
         const model = hasImage ? "gemini-3.1-pro-preview" : "gemini-3.5-flash";
         const geminiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${process.env.GEMINI_API_KEY}`;
 
         const geminiContents = messages.map(msg => {
           const parts = [];
-
-          // Text content
           if (msg.content) {
             parts.push({ text: msg.content });
           }
-
-          // Image content — detect actual mime type from base64 prefix
           if (msg.image) {
             const mimeMatch = msg.image.match(/^data:([^;]+);base64,/);
             const mimeType = mimeMatch ? mimeMatch[1] : 'image/jpeg';
             const base64Data = msg.image.split(',')[1];
-
-            parts.push({
-              inlineData: {
-                mimeType,
-                data: base64Data
-              }
-            });
+            parts.push({ inlineData: { mimeType, data: base64Data } });
           }
-
-          return {
-            role: msg.role === 'user' ? 'user' : 'model',
-            parts
-          };
+          return { role: msg.role === 'user' ? 'user' : 'model', parts };
         });
 
         const geminiResponse = await fetch(geminiUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            systemInstruction: {
-              parts: [{ text: systemPromptText }]
-            },
+            systemInstruction: { parts: [{ text: systemPromptText }] },
             contents: geminiContents,
             generationConfig: {
               temperature: 0.7,
               topP: 0.9,
-              maxOutputTokens: hasImage ? 1500 : 600,  // More tokens for skin analysis
+              maxOutputTokens: hasImage ? 1500 : 600,
             }
           })
         });
@@ -180,7 +176,8 @@ export async function POST(request) {
           const data = await geminiResponse.json();
           const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
           if (reply) {
-            return NextResponse.json({ reply });
+            const { text, recommendedProducts } = extractRecommendations(reply, allProducts);
+            return NextResponse.json({ reply: text, recommendedProducts });
           }
         } else {
           const errText = await geminiResponse.text();
@@ -191,9 +188,6 @@ export async function POST(request) {
       }
     }
 
-    // ==========================================
-    // OPENROUTER FALLBACK (text only, no image)
-    // ==========================================
     if (!hasImage && process.env.OPENROUTER_API_KEY) {
       const openRouterMessages = [
         { role: 'system', content: systemPromptText },
@@ -219,7 +213,10 @@ export async function POST(request) {
           if (response.ok) {
             const data = await response.json();
             const reply = data?.choices?.[0]?.message?.content;
-            if (reply) return NextResponse.json({ reply });
+            if (reply) {
+              const { text, recommendedProducts } = extractRecommendations(reply, allProducts);
+              return NextResponse.json({ reply: text, recommendedProducts });
+            }
           }
         } catch (e) {
           console.error(`OpenRouter ${modelName} error:`, e.message);
@@ -228,11 +225,11 @@ export async function POST(request) {
       }
     }
 
-    // Last resort fallback
     return NextResponse.json({
       reply: hasImage
         ? "Je n'ai pas pu analyser votre photo pour le moment. Pouvez-vous décrire votre type de peau en quelques mots ? Je vous aiderai avec plaisir. 🌸"
-        : "Notre système est momentanément occupé. N'hésitez pas à explorer notre catalogue ou à nous contacter via WhatsApp ! ✨"
+        : "Notre système est momentanément occupé. N'hésitez pas à explorer notre catalogue ou à nous contacter via WhatsApp ! ✨",
+      recommendedProducts: []
     });
 
   } catch (error) {

@@ -1,6 +1,5 @@
 import HeroSection from '../components/HeroSection';
 import ProductGrid from '../components/ProductGrid';
-import ReelsSection from '../components/ReelsSection';
 import SkinQuizBanner from '../components/SkinQuizBanner'; 
 import { client } from '../sanity/client'; 
 
@@ -22,8 +21,8 @@ function OrangeBlossomDivider() {
 }
 
 async function getCosmetics() {
-  // ✨ UPDATE: Added "uploadedVideoUrl" so Reels can play the video!
-  const query = `*[_type == "cosmeticProduct"] | order(_createdAt desc)[0...6] {
+  // Fetches up to 50 products
+  const query = `*[_type == "cosmeticProduct"] | order(_createdAt desc)[0...50] {
     _id,
     name,
     name_fr,
@@ -53,7 +52,9 @@ export default async function Home() {
       <HeroSection />
 
       <div className="px-6 md:px-12 max-w-[1400px] mx-auto w-full">
-        <section className="mt-8 mb-12">
+        
+        {/* 1. PRODUCT GRID SECTION (Directly after Hero for max conversions) */}
+        <section className="mt-12 mb-16">
           <div className="text-center mb-14">
             <p className="text-[#B5704A] uppercase tracking-[0.35em] text-[11px] font-semibold mb-3">
               Sélection
@@ -69,27 +70,11 @@ export default async function Home() {
           <ProductGrid products={products} />
         </section>
 
-        <section>
+        {/* 2. SKIN QUIZ BANNER */}
+        <section className="mb-24">
           <SkinQuizBanner />
         </section>
-
-        <section className="mb-24 mt-12">
-          <div className="text-center mb-14">
-            <p className="text-[#B5704A] uppercase tracking-[0.35em] text-[11px] font-semibold mb-3">
-              En direct
-            </p>
-            <h2
-              className="text-4xl md:text-5xl text-[#1C1410] tracking-tight mb-5"
-              style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}
-            >
-              L'éclat en mouvement
-            </h2>
-            <OrangeBlossomDivider />
-          </div>
-
-          {/* ✨ UPDATE: Ab ReelsSection ko bhi real Sanity products bhej rahe hain */}
-          <ReelsSection products={products} />
-        </section>
+        
       </div>
     </main>
   );

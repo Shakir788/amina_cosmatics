@@ -1,10 +1,10 @@
 'use client';
 import { useCartStore } from '../store/useCartStore';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ShoppingBag } from 'lucide-react'; // WhatsApp icon hatakar premium shopping bag icon lagaya
+import { ShoppingBag, Trash2 } from 'lucide-react'; 
 import Image from 'next/image';
 import { urlFor } from '../sanity/client';
-import { useRouter } from 'next/navigation'; // Router import kiya
+import { useRouter } from 'next/navigation';
 
 function OrangeBlossomMark({ className = "w-3.5 h-3.5" }) {
   return (
@@ -28,8 +28,8 @@ function OrangeBlossomMark({ className = "w-3.5 h-3.5" }) {
 }
 
 export default function CartDrawer() {
-  const { isOpen, closeCart, cart, updateQuantity } = useCartStore();
-  const router = useRouter(); // Router initialize kiya
+  const { isOpen, closeCart, cart, updateQuantity, removeFromCart } = useCartStore();
+  const router = useRouter();
 
   const totalPrice = cart.reduce((acc, item) => {
     const priceString = String(item.price);
@@ -37,11 +37,10 @@ export default function CartDrawer() {
     return acc + (numericPrice * (item.quantity || 1));
   }, 0);
 
-  // --- NAYA CHECKOUT LOGIC (Redirect to Checkout Page) ---
   const handleCheckout = () => {
     if (cart.length === 0) return;
-    closeCart(); // Pehle drawer band karo
-    router.push('/checkout'); // Phir checkout page pe bhej do
+    closeCart(); 
+    router.push('/checkout'); 
   };
 
   return (
@@ -87,62 +86,94 @@ export default function CartDrawer() {
             </h3>
 
             <div className="flex-1 overflow-y-auto -mx-1 px-1 space-y-4 no-scrollbar">
-              {cart.length === 0 ? (
-                <div className="flex flex-col items-center mt-20 gap-3">
-                  <OrangeBlossomMark className="w-8 h-8 text-[#D4A574]" />
-                  <p className="text-[#7A4B3A]/60 text-center text-sm italic">
-                    Votre panier attend sa première sélection.
-                  </p>
-                </div>
-              ) : (
-                cart.map((item) => (
-                  <div
-                    key={item.id}
-                    className="flex items-center gap-4 bg-white/70 border border-[#E8D9C5] rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow"
+              <AnimatePresence mode="popLayout">
+                {cart.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="flex flex-col items-center mt-20 gap-3"
                   >
-                    {/* Visual Thumbnail Section */}
-                    <div className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-[#F0E4D4] border border-[#E8D9C5]/50">
-                      {item.image ? (
-                        <Image
-                          src={urlFor(item.image).url()}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                          sizes="64px"
-                        />
-                      ) : (
-                        <OrangeBlossomMark className="w-5 h-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#D4A574]/40" />
-                      )}
-                    </div>
+                    <OrangeBlossomMark className="w-8 h-8 text-[#D4A574]" />
+                    <p className="text-[#7A4B3A]/60 text-center text-sm italic">
+                      Votre panier attend sa première sélection.
+                    </p>
+                  </motion.div>
+                ) : (
+                  cart.map((item) => (
+                    <motion.div
+                      layout
+                      initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.9, x: 20, transition: { duration: 0.2 } }}
+                      key={item.id}
+                      className="flex items-center gap-4 bg-white/70 border border-[#E8D9C5] rounded-2xl p-3 shadow-sm hover:shadow-md transition-shadow group"
+                    >
+                      {/* Visual Thumbnail */}
+                      <div className="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-[#F0E4D4] border border-[#E8D9C5]/50">
+                        {item.image ? (
+                          <Image
+                            src={urlFor(item.image).url()}
+                            alt={item.name}
+                            fill
+                            className="object-cover"
+                            sizes="64px"
+                          />
+                        ) : (
+                          <OrangeBlossomMark className="w-5 h-5 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-[#D4A574]/40" />
+                        )}
+                      </div>
 
-                    <div className="flex flex-col min-w-0 flex-1">
-                      <h4 className="font-medium text-[#1C1410] text-sm truncate">{item.name}</h4>
-                      <p className="text-xs text-[#B5704A] font-medium mt-0.5">{item.price}</p>
-                    </div>
+                      {/* Product Details */}
+                      <div className="flex flex-col min-w-0 flex-1 py-1">
+                        <h4 className="font-medium text-[#1C1410] text-sm truncate">{item.name}</h4>
+                        <p className="text-xs text-[#B5704A] font-medium mt-0.5">{item.price}</p>
+                      </div>
 
-                    {/* Quantity Controls */}
-                    <div className="flex items-center gap-2 bg-[#FBF6F0] border border-[#E8D9C5] rounded-full px-2.5 py-1.5 shrink-0">
-                      <button
-                        onClick={() => updateQuantity(item.id, -1)}
-                        aria-label="Diminuer la quantité"
-                        className="text-[#7A4B3A]/70 hover:text-[#1C1410] font-semibold text-base leading-none w-5 flex justify-center"
-                      >
-                        −
-                      </button>
-                      <span className="font-semibold text-xs w-4 text-center text-[#1C1410]">
-                        {item.quantity}
-                      </span>
-                      <button
-                        onClick={() => updateQuantity(item.id, 1)}
-                        aria-label="Augmenter la quantité"
-                        className="text-[#7A4B3A]/70 hover:text-[#1C1410] font-semibold text-base leading-none w-5 flex justify-center"
-                      >
-                        +
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
+                      {/* Actions: Remove Button + Quantity Controls */}
+                      <div className="flex flex-col items-end gap-2 shrink-0">
+                        
+                        {/* Remove Button */}
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          aria-label="Supprimer l'article"
+                          className="text-[#1C1410]/30 hover:text-[#B5704A] transition-colors pr-1"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+
+                        {/* Quantity Controls */}
+                        <div className="flex items-center gap-1.5 bg-[#FBF6F0] border border-[#E8D9C5] rounded-full px-2 py-1">
+                          
+                          {/* 🌟 SMART MINUS BUTTON */}
+                          <button
+                            onClick={() => {
+                              if (item.quantity <= 1) {
+                                removeFromCart(item.id); // Agar quantity 1 hai aur minus dabaya, toh delete kar do
+                              } else {
+                                updateQuantity(item.id, -1); // Varna normally 1 minus karo
+                              }
+                            }}
+                            className="text-[#7A4B3A]/70 hover:text-[#1C1410] font-semibold text-sm leading-none w-4 flex justify-center"
+                          >
+                            −
+                          </button>
+                          
+                          <span className="font-semibold text-[11px] w-4 text-center text-[#1C1410]">
+                            {item.quantity}
+                          </span>
+                          
+                          <button
+                            onClick={() => updateQuantity(item.id, 1)}
+                            className="text-[#7A4B3A]/70 hover:text-[#1C1410] font-semibold text-sm leading-none w-4 flex justify-center"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Total and Checkout */}
@@ -159,7 +190,6 @@ export default function CartDrawer() {
                     {totalPrice} <span className="text-base text-[#B5704A]">MAD</span>
                   </span>
                 </div>
-                {/* Button updated for standard checkout flow */}
                 <button
                   onClick={handleCheckout}
                   className="group w-full bg-[#1C1410] text-[#FBF6F0] py-4.5 rounded-full font-semibold uppercase tracking-[0.15em] text-[11px] hover:bg-[#B5704A] transition-colors duration-300 active:scale-[0.97] shadow-lg flex items-center justify-center gap-3"

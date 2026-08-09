@@ -1,31 +1,39 @@
 'use client';
 import { useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Play, ShoppingBag, Volume2, VolumeX } from 'lucide-react';
+import { Play, ShoppingBag, Volume2, VolumeX, Maximize2 } from 'lucide-react';
+import Link from 'next/link';
 import { useCartStore } from '../store/useCartStore';
 
-// ✨ NAYA: Component ab directly "products" prop accept karega
 export default function ReelsSection({ products = [] }) {
   const addToCart = useCartStore((state) => state.addToCart);
   const openCart = useCartStore((state) => state.openCart);
 
-  // ✨ SMART FILTER: Sirf wo products nikaalo jisme actually video link hai
   const videoProducts = products.filter(
     (p) => p.uploadedVideoUrl || p.videoUrl
   );
 
-  // Agar database me ek bhi video wala product nahi hai, toh ye section hide ho jayega
   if (videoProducts.length === 0) {
     return null; 
   }
 
   return (
     <section className="py-24">
-      <h2 className="text-3xl font-bold text-[#1C1410] mb-12 tracking-tight px-6 md:px-0">
-        Découvrir en Vidéo
-      </h2>
+      <div className="flex items-center justify-between mb-12 px-6 md:px-0">
+        <h2 className="text-3xl font-bold text-[#1C1410] tracking-tight">
+          Découvrir en Vidéo
+        </h2>
+
+        {/* Link to full-screen reels experience */}
+        <Link
+          href="/reels"
+          className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.15em] text-[#B5704A] hover:text-[#1C1410] transition-colors group"
+        >
+          <span className="hidden sm:inline">Voir tout</span>
+          <Maximize2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+        </Link>
+      </div>
       
-      {/* Horizontal scrollable container */}
       <div 
         className="flex gap-6 overflow-x-auto pb-12 pt-4 px-6 md:px-0 snap-x snap-mandatory items-center scroll-smooth"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
@@ -55,16 +63,23 @@ function ReelCard({ product, onAdd }) {
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
 
-  // ✨ Video source ko real product link se connect kiya
   const videoSrc = product.uploadedVideoUrl || product.videoUrl;
 
   const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+
     if (isPlaying) {
-      videoRef.current?.pause();
+      video.pause();
+      setIsPlaying(false);
     } else {
-      videoRef.current?.play();
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => setIsPlaying(true))
+          .catch(() => {});
+      }
     }
-    setIsPlaying(!isPlaying);
   };
 
   const toggleMute = (e) => {
@@ -75,10 +90,18 @@ function ReelCard({ product, onAdd }) {
   return (
     <motion.div 
       whileHover={{ scale: 1.02 }}
-      // ✨ FIX: Exact 9:16 portrait format for cinematic Instagram reel layout
       className="relative aspect-[9/16] h-[500px] sm:h-[570px] shrink-0 snap-center rounded-[32px] overflow-hidden shadow-2xl border border-[#E8D9C5]/50 bg-[#1C1410] cursor-pointer group"
       onClick={togglePlay}
     >
+      <Link
+        href="/reels"
+        onClick={(e) => e.stopPropagation()}
+        className="absolute top-5 left-5 w-10 h-10 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center text-white/80 hover:text-white transition-colors z-10"
+        title="Voir en plein écran"
+      >
+        <Maximize2 className="w-4 h-4" />
+      </Link>
+
       <video 
         ref={videoRef}
         src={videoSrc}
@@ -89,10 +112,8 @@ function ReelCard({ product, onAdd }) {
         className="absolute inset-0 w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity duration-500"
       />
       
-      {/* Dark gradient overlay for bottom text readability */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-80 pointer-events-none"></div>
 
-      {/* Mute/Unmute Button */}
       <button 
         onClick={toggleMute} 
         className="absolute top-5 right-5 w-10 h-10 bg-black/30 backdrop-blur-md rounded-full flex items-center justify-center text-white/80 hover:text-white transition-colors z-10"
@@ -100,7 +121,6 @@ function ReelCard({ product, onAdd }) {
         {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
       </button>
 
-      {/* Play Icon when Paused */}
       {!isPlaying && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white">
@@ -109,7 +129,6 @@ function ReelCard({ product, onAdd }) {
         </div>
       )}
 
-      {/* THE MONEY MAKER: Shoppable Product Card Overlay */}
       <div 
         className="absolute bottom-5 left-4 right-4 z-20"
         onClick={(e) => e.stopPropagation()} 
@@ -119,7 +138,6 @@ function ReelCard({ product, onAdd }) {
             <p className="text-[10px] uppercase tracking-[0.2em] text-[#B5704A] font-bold mb-1">
               Acheter le look
             </p>
-            {/* ✨ NAYA: Real product name and price */}
             <h4 className="font-medium text-[#1C1410] text-sm truncate">
               {product.name}
             </h4>

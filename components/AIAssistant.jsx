@@ -1,8 +1,10 @@
 'use client';
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Send, Sparkles, Camera, RefreshCw, MessageCircle } from 'lucide-react';
+import { X, Send, Sparkles, Camera, RefreshCw, MessageCircle, ShoppingBag, Check } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useCartStore } from '../store/useCartStore';
 
 const INITIAL_MESSAGE = { role: 'assistant', content: "Bonjour ! Je suis Amina, votre experte beauté. Posez-moi vos questions ou envoyez-moi une photo de votre peau pour une analyse personnalisée. 🌸" };
 
@@ -98,6 +100,84 @@ function MessageContent({ content }) {
   );
 }
 
+// ===== Clickable product recommendation cards (hero feature) =====
+function RecommendedProductCard({ product, addToCart, addedIds }) {
+  const isAdded = addedIds.includes(product._id);
+  const price = Number(product.price);
+
+  const handleAdd = (e) => {
+    e.preventDefault();
+    if (isAdded) return;
+    addToCart({ id: product._id, name: product.name, price: `${price} MAD` });
+  };
+
+  return (
+    <div className="bg-white border border-[#E8D9C5] rounded-2xl p-2.5 flex items-center gap-3 shadow-sm">
+      <Link href={`/product/${product.slug}`} className="shrink-0">
+        <div className="w-14 h-14 rounded-xl overflow-hidden bg-[#F0E4D4] relative ring-1 ring-[#E8D9C5]">
+          {product.imageUrl && (
+            <Image src={product.imageUrl} alt={product.name} fill className="object-cover" unoptimized />
+          )}
+        </div>
+      </Link>
+      <div className="flex-1 min-w-0">
+        <Link href={`/product/${product.slug}`}>
+          <p className="text-xs font-medium text-[#1C1410] line-clamp-1 hover:text-[#B5704A] transition-colors">
+            {product.name}
+          </p>
+        </Link>
+        <p className="text-[11px] text-[#B5704A] font-semibold mt-0.5">{price} MAD</p>
+      </div>
+      <button
+        onClick={handleAdd}
+        disabled={isAdded}
+        className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center transition-all ${
+          isAdded ? 'bg-green-100 text-green-600' : 'bg-[#1C1410] text-[#FBF6F0] hover:bg-[#B5704A] active:scale-90'
+        }`}
+        aria-label="Ajouter au panier"
+      >
+        {isAdded ? <Check className="w-4 h-4" /> : <ShoppingBag className="w-3.5 h-3.5" />}
+      </button>
+    </div>
+  );
+}
+
+function RecommendationBlock({ products, addToCart, addedIds, onAddAll }) {
+  if (!products || products.length === 0) return null;
+  const allAdded = products.every(p => addedIds.includes(p._id));
+
+  return (
+    <div className="ml-[34px] mt-2 space-y-2">
+      <div className="flex items-center gap-1.5 mb-2">
+        <Sparkles className="w-3 h-3 text-[#D4A574]" />
+        <span className="text-[10px] uppercase tracking-[0.15em] text-[#B5704A] font-semibold">
+          Recommandations Amina
+        </span>
+      </div>
+      {products.map((p) => (
+        <RecommendedProductCard key={p._id} product={p} addToCart={addToCart} addedIds={addedIds} />
+      ))}
+      {products.length > 1 && (
+        <button
+          onClick={() => onAddAll(products)}
+          disabled={allAdded}
+          className={`w-full text-[11px] font-semibold uppercase tracking-[0.15em] py-2.5 rounded-full transition-colors flex items-center justify-center gap-2 ${
+            allAdded
+              ? 'bg-green-50 text-green-600 border border-green-200'
+              : 'bg-[#B5704A]/10 text-[#B5704A] hover:bg-[#B5704A]/20 border border-[#B5704A]/20'
+          }`}
+        >
+          {allAdded ? (
+            <><Check className="w-3.5 h-3.5" /> Routine ajoutée</>
+          ) : (
+            <><ShoppingBag className="w-3.5 h-3.5" /> Ajouter toute la routine</>
+          )}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export default function AIAssistant() {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState([INITIAL_MESSAGE]);
@@ -108,6 +188,9 @@ export default function AIAssistant() {
   const [previewImage, setPreviewImage] = useState(null);
   const [hasUnread, setHasUnread] = useState(false);
   const [viewportHeight, setViewportHeight] = useState('100dvh');
+  const [addedIds, setAddedIds] = useState([]);
+
+  const addToCart = useCartStore((state) => state.addToCart);
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -127,6 +210,13 @@ export default function AIAssistant() {
   useEffect(() => {
     if (isOpen) setHasUnread(false);
   }, [isOpen]);
+
+  // Listen for external "open AI" trigger (Hero CTA button)
+  useEffect(() => {
+    const handler = () => setIsOpen(true);
+    window.addEventListener('open-amina-ai', handler);
+    return () => window.removeEventListener('open-amina-ai', handler);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -151,6 +241,18 @@ export default function AIAssistant() {
     reader.readAsDataURL(file);
   };
 
+  const handleAddToCart = (product) => {
+    addToCart(product);
+    setAddedIds((prev) => [...prev, product.id]);
+  };
+
+  const handleAddAll = (products) => {
+    products.forEach((p) => {
+      addToCart({ id: p._id, name: p.name, price: `${Number(p.price)} MAD` });
+    });
+    setAddedIds((prev) => [...prev, ...products.map(p => p._id)]);
+  };
+
   const sendMessage = async (textOverride) => {
     const text = textOverride ?? input;
     if (!text.trim() && !selectedImage) return;
@@ -163,7 +265,7 @@ export default function AIAssistant() {
       previewImage,
     };
 
-    const apiMessages = [...messages, userMsg].map(({ previewImage: _p, ...rest }) => rest);
+    const apiMessages = [...messages, userMsg].map(({ previewImage: _p, recommendedProducts: _r, ...rest }) => rest);
 
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
@@ -179,7 +281,11 @@ export default function AIAssistant() {
       });
       const data = await response.json();
       if (response.ok && data.reply) {
-        setMessages((prev) => [...prev, { role: 'assistant', content: data.reply }]);
+        setMessages((prev) => [...prev, {
+          role: 'assistant',
+          content: data.reply,
+          recommendedProducts: data.recommendedProducts || [],
+        }]);
         if (!isOpen) setHasUnread(true);
       } else {
         throw new Error(data.error || 'Error');
@@ -217,6 +323,7 @@ export default function AIAssistant() {
     setInput('');
     setSelectedImage(null);
     setPreviewImage(null);
+    setAddedIds([]);
   };
 
   const showQuickReplies = messages.length <= 2 && !isLoading && !isAnalyzing;
@@ -296,27 +403,37 @@ export default function AIAssistant() {
               {/* Chat History */}
               <div className="flex-1 overflow-y-auto p-4 space-y-3.5 bg-[#FBF6F0]/60">
                 {messages.map((msg, idx) => (
-                  <div
-                    key={idx}
-                    className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end`}
-                  >
-                    {msg.role === 'assistant' && (
-                      <AminaAvatar size={26} className="shrink-0 mb-0.5 border border-[#E8D9C5]" />
-                    )}
+                  <div key={idx}>
                     <div
-                      className={`text-sm leading-relaxed ${
-                        msg.role === 'user'
-                          ? 'bg-[#1C1410] text-[#FBF6F0] rounded-[18px] rounded-tr-[4px] shadow-md px-4 py-3 max-w-[80%]'
-                          : 'bg-white text-[#1C1410] border border-[#E8D9C5] rounded-[18px] rounded-tl-[4px] shadow-sm px-4 py-3 max-w-[85%]'
-                      }`}
+                      className={`flex gap-2.5 ${msg.role === 'user' ? 'justify-end' : 'justify-start'} items-end`}
                     >
-                      {(msg.previewImage || msg.image) && (
-                        <div className="w-20 h-20 rounded-xl overflow-hidden mb-2 border border-white/20 relative">
-                          <Image src={msg.previewImage || msg.image} alt="Photo" fill className="object-cover" unoptimized />
-                        </div>
+                      {msg.role === 'assistant' && (
+                        <AminaAvatar size={26} className="shrink-0 mb-0.5 border border-[#E8D9C5]" />
                       )}
-                      <MessageContent content={msg.content} />
+                      <div
+                        className={`text-sm leading-relaxed ${
+                          msg.role === 'user'
+                            ? 'bg-[#1C1410] text-[#FBF6F0] rounded-[18px] rounded-tr-[4px] shadow-md px-4 py-3 max-w-[80%]'
+                            : 'bg-white text-[#1C1410] border border-[#E8D9C5] rounded-[18px] rounded-tl-[4px] shadow-sm px-4 py-3 max-w-[85%]'
+                        }`}
+                      >
+                        {(msg.previewImage || msg.image) && (
+                          <div className="w-20 h-20 rounded-xl overflow-hidden mb-2 border border-white/20 relative">
+                            <Image src={msg.previewImage || msg.image} alt="Photo" fill className="object-cover" unoptimized />
+                          </div>
+                        )}
+                        <MessageContent content={msg.content} />
+                      </div>
                     </div>
+
+                    {msg.role === 'assistant' && msg.recommendedProducts?.length > 0 && (
+                      <RecommendationBlock
+                        products={msg.recommendedProducts}
+                        addToCart={handleAddToCart}
+                        addedIds={addedIds}
+                        onAddAll={handleAddAll}
+                      />
+                    )}
                   </div>
                 ))}
 

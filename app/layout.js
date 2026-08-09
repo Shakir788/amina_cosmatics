@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import CartDrawer from '../components/CartDrawer';
 import Footer from '../components/Footer';
 import AIAssistant from '../components/AIAssistant'; // Floating AI Closer
+import FloatingReelsPill from '../components/FloatingReelsPill'; // 🌟 Naya Reels Button
 
 // Font optimization for ultra-fast loading
 const inter = Inter({
@@ -46,6 +47,7 @@ export default function RootLayout({ children }) {
         {/* Global Components */}
         <CartDrawer />
         <AIAssistant /> {/* Floating AI Assistant */}
+        <FloatingReelsPill /> {/* 🌟 Maison Reels Floating Button */}
 
       </body>
     </html>
