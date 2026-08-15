@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../store/useCartStore';
-import { useWishlistStore } from '../store/useWishlistStore'; // Wishlist store import kiya
+import { useWishlistStore } from '../store/useWishlistStore'; 
+import LanguageSwitcher from './LanguageSwitcher'; // 🌟 Naya Language Switcher import kiya
 
 function OrangeBlossomMark({ className = "w-3.5 h-3.5" }) {
   return (
@@ -30,17 +31,17 @@ const NAV_LINKS = [
 export default function Navbar() {
   const openCart = useCartStore((state) => state.openCart);
   const cart = useCartStore((state) => state.cart);
-  const wishlistCount = useWishlistStore((state) => state.wishlist.length); // Wishlist ka count fetch kiya
+  const wishlistCount = useWishlistStore((state) => state.wishlist.length);
   const router = useRouter();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [mounted, setMounted] = useState(false); // Hydration error bachane ke liye
+  const [mounted, setMounted] = useState(false);
   const searchInputRef = useRef(null);
 
   useEffect(() => {
-    setMounted(true); // Component mount hote hi true ho jayega
+    setMounted(true);
     setMenuOpen(false);
     setSearchOpen(false);
   }, []);
@@ -89,7 +90,7 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Center — Logo — smaller + no-wrap on mobile */}
+          {/* Center — Logo */}
           <div className="flex-1 text-center min-w-0 px-1">
             <Link href="/" className="inline-flex items-center gap-1.5 md:gap-2" onClick={() => setMenuOpen(false)}>
               <OrangeBlossomMark className="w-3 h-3 md:w-3.5 md:h-3.5 text-[#B5704A] hidden sm:block shrink-0" />
@@ -105,6 +106,10 @@ export default function Navbar() {
 
           {/* Right — Icons */}
           <div className="flex-1 flex justify-end items-center gap-1 sm:gap-3">
+            
+            {/* 🌟 NAYA: Language Switcher Yahan Add Kiya */}
+            <LanguageSwitcher />
+
             <button
               onClick={() => setSearchOpen(true)}
               aria-label="Rechercher"
@@ -113,7 +118,6 @@ export default function Navbar() {
               <Search className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px]" />
             </button>
 
-            {/* NAYA WISHLIST BUTTON */}
             <Link 
               href="/wishlist" 
               className="relative p-1.5 text-[#1C1410]/80 hover:text-[#B5704A] transition-colors group"
@@ -133,7 +137,7 @@ export default function Navbar() {
               className="relative p-1.5 cursor-pointer group outline-none"
             >
               <ShoppingBag className="w-[17px] h-[17px] sm:w-[18px] sm:h-[18px] text-[#1C1410]/80 group-hover:text-[#B5704A] transition-colors" />
-              {mounted && cart.length > 0 && ( // Hydration issue rokne ke liye 'mounted' yahan bhi daala hai
+              {mounted && cart.length > 0 && (
                 <span className="absolute -top-1 -right-1 bg-[#B5704A] text-[#FBF6F0] text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {cart.length}
                 </span>

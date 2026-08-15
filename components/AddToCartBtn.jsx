@@ -1,13 +1,16 @@
 'use client';
 import { useState } from 'react';
 import { useCartStore } from '../store/useCartStore';
+import { useLangStore } from '../store/useLangStore'; // 🌟 Translation Engine Import Kiya
 
 export default function AddToCartBtn({ product }) {
   const [isAdding, setIsAdding] = useState(false);
   
-  // Zustand se addToCart aur openCart dono nikal liye
   const addToCart = useCartStore((state) => state.addToCart);
-  const openCart = useCartStore((state) => state.openCart); // Make sure tere store mein openCart function ho
+  const openCart = useCartStore((state) => state.openCart); 
+
+  // 🌟 Engine hook
+  const t = useLangStore((state) => state.t);
 
   const isOutOfStock = product.inStock === false;
 
@@ -26,8 +29,7 @@ export default function AddToCartBtn({ product }) {
 
     setIsAdding(false);
     
-    // --- THE CLOSER MOVE ---
-    // Item add hote hi drawer open kardo taaki customer direct checkout dekhe
+    // Item add hote hi drawer open kardo
     if (openCart) {
       openCart();
     }
@@ -39,7 +41,7 @@ export default function AddToCartBtn({ product }) {
         disabled
         className="w-full py-4.5 rounded-full bg-[#E8D9C5] text-[#7A4B3A]/60 font-semibold uppercase tracking-[0.2em] text-sm cursor-not-allowed"
       >
-        Épuisé
+        {t('outOfStock')} {/* 🌟 Hardcoded hata diya */}
       </button>
     );
   }
@@ -60,12 +62,12 @@ export default function AddToCartBtn({ product }) {
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
           </svg>
-          Ajout en cours...
+          {t('adding')} {/* 🌟 Loading text yahan se aayega */}
         </span>
       ) : (
         <>
           <span className="w-1.5 h-1.5 rounded-full bg-[#D4A574] group-hover:bg-[#FBF6F0] transition-colors" />
-          Ajouter au panier
+          {t('addToCart')} {/* 🌟 Normal text yahan se aayega */}
         </>
       )}
     </button>

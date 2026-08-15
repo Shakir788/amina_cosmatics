@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { FaInstagram, FaWhatsapp, FaEnvelope } from 'react-icons/fa';
 import { FiSend } from 'react-icons/fi';
+import { useLangStore } from '../store/useLangStore'; // 🌟 Translation Engine Import
 
 function OrangeBlossomMark({ className = "w-4 h-4" }) {
   return (
@@ -15,7 +16,6 @@ function OrangeBlossomMark({ className = "w-4 h-4" }) {
   );
 }
 
-// UPGRADED: Contrast fix and premium hover effect on badges
 function TrustBadge({ title, subtitle }) {
   return (
     <div className="flex items-center gap-4 group">
@@ -34,6 +34,18 @@ export default function Footer() {
   const [email, setEmail] = useState('');
   const [subscribed, setSubscribed] = useState(false);
 
+  // 🌟 Engine hook aur RTL check
+  const t = useLangStore((state) => state.t);
+  const lang = useLangStore((state) => state.lang);
+  const isArabic = lang === 'AR';
+
+  // Chhota success message dictionary bypass (taaki tujhe wahan dubara add na karna pade)
+  const successMsgs = {
+    FR: "Merci, vous êtes inscrite !",
+    EN: "Thank you for subscribing!",
+    AR: "شكرًا لكِ على الاشتراك!"
+  };
+
   const handleSubscribe = (e) => {
     e.preventDefault();
     if (!email) return;
@@ -42,17 +54,17 @@ export default function Footer() {
   };
 
   return (
-    <footer className="bg-[#1C1410] text-[#FBF6F0] mt-24 relative overflow-hidden">
+    <footer dir={isArabic ? 'rtl' : 'ltr'} className="bg-[#1C1410] text-[#FBF6F0] mt-24 relative overflow-hidden">
       {/* Background ambient glows */}
-      <div className="pointer-events-none absolute -top-32 -left-32 w-96 h-96 rounded-full bg-[#B5704A]/10 blur-[120px]" />
-      <div className="pointer-events-none absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-[#D4A574]/10 blur-[120px]" />
+      <div className={`pointer-events-none absolute -top-32 w-96 h-96 rounded-full bg-[#B5704A]/10 blur-[120px] ${isArabic ? '-right-32' : '-left-32'}`} />
+      <div className={`pointer-events-none absolute -bottom-32 w-96 h-96 rounded-full bg-[#D4A574]/10 blur-[120px] ${isArabic ? '-left-32' : '-right-32'}`} />
 
       {/* Trust Bar */}
       <div className="relative">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-10 grid sm:grid-cols-3 gap-8">
-          <TrustBadge title="Livraison 24/48h" subtitle="Partout au Maroc" />
-          <TrustBadge title="100% Authentique" subtitle="Marques certifiées" />
-          <TrustBadge title="Retour facile" subtitle="Sous 7 jours" />
+          <TrustBadge title={t('footerDelivery')} subtitle={t('footerDeliverySub')} />
+          <TrustBadge title={t('footerAuth')} subtitle={t('footerAuthSub')} />
+          <TrustBadge title={t('footerReturn')} subtitle={t('footerReturnSub')} />
         </div>
       </div>
 
@@ -64,64 +76,71 @@ export default function Footer() {
         
         {/* Brand & Newsletter */}
         <div className="md:col-span-5">
-          <h2 className="text-3xl tracking-tight mb-4" style={{ fontFamily: "'Cormorant Garamond', 'Playfair Display', serif" }}>
+          <h2 className="text-3xl tracking-tight mb-4" style={{ fontFamily: isArabic ? 'system-ui, sans-serif' : "'Cormorant Garamond', 'Playfair Display', serif" }}>
             Cosmétiques Amina
           </h2>
           <p className="text-[#FBF6F0]/60 text-sm leading-relaxed max-w-sm mb-8">
-            Votre sélection des meilleures marques de cosmétiques mondiales, choisies spécialement pour votre éclat.
+            {t('footerDesc')}
           </p>
 
-          <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4A574] font-semibold mb-4">Restez informée</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4A574] font-semibold mb-4">
+            {t('footerNewsletter')}
+          </p>
+          
           {subscribed ? (
             <p className="text-sm text-[#FBF6F0]/80 flex items-center gap-2 bg-white/5 py-3 px-5 rounded-full border border-white/10 w-fit">
-              <OrangeBlossomMark className="w-4 h-4 text-[#D4A574]" /> Merci, vous êtes inscrite !
+              <OrangeBlossomMark className="w-4 h-4 text-[#D4A574]" /> {successMsgs[lang]}
             </p>
           ) : (
             <form onSubmit={handleSubscribe} className="flex max-w-sm group">
               <input 
                 type="email" 
                 required 
-                placeholder="Votre e-mail" 
+                placeholder={t('footerEmailHolder')} 
                 value={email} 
                 onChange={(e) => setEmail(e.target.value)} 
-                className="flex-1 bg-white/5 border border-white/15 border-r-0 rounded-l-full px-5 py-3.5 text-sm placeholder:text-[#FBF6F0]/35 focus:outline-none focus:border-[#B5704A] focus:bg-white/10 transition-all duration-300" 
+                className={`flex-1 bg-white/5 border border-white/15 px-5 py-3.5 text-sm placeholder:text-[#FBF6F0]/35 focus:outline-none focus:border-[#B5704A] focus:bg-white/10 transition-all duration-300
+                  ${isArabic ? 'rounded-r-full border-l-0' : 'rounded-l-full border-r-0'}
+                `} 
               />
               <button 
                 type="submit" 
                 aria-label="S'abonner" 
-                className="bg-[#B5704A] hover:bg-[#D4A574] text-white px-6 rounded-r-full flex items-center justify-center transition-colors active:scale-95 shadow-md"
+                className={`bg-[#B5704A] hover:bg-[#D4A574] text-white px-6 flex items-center justify-center transition-colors active:scale-95 shadow-md
+                  ${isArabic ? 'rounded-l-full' : 'rounded-r-full'}
+                `}
               >
-                <FiSend className="w-4 h-4" />
+                <FiSend className={`w-4 h-4 ${isArabic ? 'rotate-180' : ''}`} />
               </button>
             </form>
           )}
         </div>
 
         {/* Links - Collections */}
-        <div className="md:col-span-2 md:pl-4">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4A574] font-semibold mb-6">Collections</p>
+        <div className={`md:col-span-2 ${isArabic ? 'md:pr-4' : 'md:pl-4'}`}>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4A574] font-semibold mb-6">{t('footerCollections')}</p>
           <ul className="space-y-4 text-sm text-[#FBF6F0]/65">
-            <li><Link href="/marques" className="inline-block hover:text-[#B5704A] hover:translate-x-1 transition-all duration-300">Marques</Link></li>
-            <li><Link href="/soins" className="inline-block hover:text-[#B5704A] hover:translate-x-1 transition-all duration-300">Soins du Visage</Link></li>
-            <li><Link href="/parfums" className="inline-block hover:text-[#B5704A] hover:translate-x-1 transition-all duration-300">Parfums</Link></li>
+            <li><Link href="/marques" className={`inline-block hover:text-[#B5704A] transition-all duration-300 ${isArabic ? 'hover:-translate-x-1' : 'hover:translate-x-1'}`}>{t('footerBrands')}</Link></li>
+            <li><Link href="/soins" className={`inline-block hover:text-[#B5704A] transition-all duration-300 ${isArabic ? 'hover:-translate-x-1' : 'hover:translate-x-1'}`}>{t('footerSkincare')}</Link></li>
+            <li><Link href="/parfums" className={`inline-block hover:text-[#B5704A] transition-all duration-300 ${isArabic ? 'hover:-translate-x-1' : 'hover:translate-x-1'}`}>{t('footerPerfumes')}</Link></li>
           </ul>
         </div>
 
         {/* Links - Maison */}
         <div className="md:col-span-2">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4A574] font-semibold mb-6">Maison</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4A574] font-semibold mb-6">{t('footerMaison')}</p>
           <ul className="space-y-4 text-sm text-[#FBF6F0]/65">
-            <li><Link href="/about" className="inline-block hover:text-[#B5704A] hover:translate-x-1 transition-all duration-300">À propos</Link></li>
-            <li><Link href="/contact" className="inline-block hover:text-[#B5704A] hover:translate-x-1 transition-all duration-300">Contact</Link></li>
-            <li><Link href="/faq" className="inline-block hover:text-[#B5704A] hover:translate-x-1 transition-all duration-300">FAQ</Link></li>
+            <li><Link href="/about" className={`inline-block hover:text-[#B5704A] transition-all duration-300 ${isArabic ? 'hover:-translate-x-1' : 'hover:translate-x-1'}`}>{t('footerAbout')}</Link></li>
+            <li><Link href="/contact" className={`inline-block hover:text-[#B5704A] transition-all duration-300 ${isArabic ? 'hover:-translate-x-1' : 'hover:translate-x-1'}`}>{t('footerContact')}</Link></li>
+            <li><Link href="/faq" className={`inline-block hover:text-[#B5704A] transition-all duration-300 ${isArabic ? 'hover:-translate-x-1' : 'hover:translate-x-1'}`}>{t('footerFAQ')}</Link></li>
           </ul>
         </div>
 
         {/* Contact & Socials */}
         <div className="md:col-span-3">
-          <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4A574] font-semibold mb-6">Contact</p>
+          <p className="text-[10px] uppercase tracking-[0.25em] text-[#D4A574] font-semibold mb-6">{t('footerContactUs')}</p>
           <ul className="space-y-4 text-sm text-[#FBF6F0]/65 mb-7">
-            <li className="flex items-center gap-2">Casablanca, Maroc</li>
+            <li className="flex items-center gap-2">{t('footerLocation')}</li>
           </ul>
           
           <div className="flex items-center gap-3">
@@ -143,9 +162,13 @@ export default function Footer() {
       {/* Bottom Bar */}
       <div className="relative">
         <div className="max-w-[1400px] mx-auto px-6 md:px-12 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[#FBF6F0]/40 text-xs">© {new Date().getFullYear()} Cosmétiques Amina. Tous droits réservés.</p>
+          <p className="text-[#FBF6F0]/40 text-xs">
+            {t('footerCopyright').replace('2026', new Date().getFullYear())}
+          </p>
           <div className="flex items-center gap-3">
-            <span className="text-[10px] uppercase tracking-[0.15em] text-[#FBF6F0]/35 mr-1 font-medium">Paiement Sécurisé</span>
+            <span className={`text-[10px] uppercase tracking-[0.15em] text-[#FBF6F0]/35 font-medium ${isArabic ? 'ml-1' : 'mr-1'}`}>
+              {t('footerPayment')}
+            </span>
             <span className="text-[10px] font-semibold bg-white/10 px-3 py-1.5 rounded-md text-[#FBF6F0]/70 border border-white/5">Visa</span>
             <span className="text-[10px] font-semibold bg-white/10 px-3 py-1.5 rounded-md text-[#FBF6F0]/70 border border-white/5">Mastercard</span>
             <span className="text-[10px] font-semibold bg-white/10 px-3 py-1.5 rounded-md text-[#FBF6F0]/70 border border-white/5">COD</span>
